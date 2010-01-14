@@ -90,6 +90,7 @@ class ForumThread(models.Model):
     
     view_count = models.IntegerField(default=0, editable=False)
     reply_count = models.IntegerField(default=0, editable=False)
+    subscriber_count = models.IntegerField(default=0, editable=False)
     
     def inc_views(self):
         self.view_count += 1
@@ -98,6 +99,10 @@ class ForumThread(models.Model):
     
     def update_reply_count(self):
         self.reply_count = self.replies.all().count()
+        self.save()
+    
+    def update_subscriber_count(self):
+        self.subscriber_count = self.subscriptions.count()
         self.save()
     
     def new_reply(self, reply):
@@ -140,6 +145,12 @@ class UserPostCount(models.Model):
     count = models.IntegerField(default=0)
 
 
+class ThreadSubscription(models.Model):
+    
+    thread = models.ForeignKey(ForumThread, related_name="subscriptions")
+    user = models.ForeignKey(User, related_name="forum_subscriptions")
+
+
 def forum_thread_save(sender, instance=None, created=False, **kwargs):
     if instance and created:
         issue_update("forum_thread", user=instance.author, forum_thread=instance)
@@ -158,5 +169,12 @@ def forum_post_save(sender, instance=None, created=False, **kwargs):
             issue_update("forum_post", user=instance.author, forum_post=instance)
 
 
+def forum_subscription_save(sender, instance=None, created=False, **kwargs):
+    if instance and created:
+        thread = instance.thread
+        thread.update_subscriber_count()
+
+
 post_save.connect(forum_thread_save, sender=ForumThread)
 post_save.connect(forum_post_save, sender=ForumPost)
+post_save.connect(forum_subscription_save, sender=ThreadSubscription)
