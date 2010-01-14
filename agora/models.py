@@ -183,3 +183,5 @@ post_save.connect(forum_reply_save, sender=ForumReply)
 post_save.connect(forum_subscription_save, sender=ThreadSubscription)
 
 # @@@ handling unsubscribe?
+
+# @@@ handling deletion? (e.g. counts, last_modified, last_reply)
