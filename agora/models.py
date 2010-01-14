@@ -88,6 +88,8 @@ class ForumThread(models.Model):
     last_modified = models.DateTimeField(default=datetime.now)
     last_reply = models.ForeignKey("ForumReply", null=True) # only temporarily null
     
+    content = models.TextField()
+    
     # @@@ sticky threads
     # @@@ closed threads
     
@@ -115,21 +117,15 @@ class ForumThread(models.Model):
         self.save()
         self.forum.new_reply(reply)
     
-    @property
-    def first_post(self):
-        return self.replies.get(is_first=True)
-    
     def __unicode__(self):
         return self.title
 
 
-class ForumPost(models.Model):
+class ForumReply(models.Model):
     
     thread = models.ForeignKey(ForumThread, related_name="replies")
     
-    # @@@ TITLE?
     author = models.ForeignKey(User, related_name="replies")
-    is_first = models.BooleanField(default=False)
     timestamp = models.DateTimeField(default=datetime.now)
     
     content = models.TextField()
@@ -159,7 +155,7 @@ def forum_thread_save(sender, instance=None, created=False, **kwargs):
         issue_update("forum_thread", user=instance.author, forum_thread=instance)
 
 
-def forum_post_save(sender, instance=None, created=False, **kwargs):
+def forum_reply_save(sender, instance=None, created=False, **kwargs):
     if instance and created:
         thread = instance.thread
         thread.new_reply(instance)
@@ -167,9 +163,7 @@ def forum_post_save(sender, instance=None, created=False, **kwargs):
         post_count, created = UserPostCount.objects.get_or_create(user=instance.author)
         post_count.count += 1
         post_count.save()
-        # don't issue an update if this post is marked first
-        if not instance.is_first:
-            issue_update("forum_post", user=instance.author, forum_post=instance)
+        issue_update("forum_reply", user=instance.author, forum_reply=instance)
 
 
 def forum_subscription_save(sender, instance=None, created=False, **kwargs):
@@ -179,5 +173,5 @@ def forum_subscription_save(sender, instance=None, created=False, **kwargs):
 
 
 post_save.connect(forum_thread_save, sender=ForumThread)
-post_save.connect(forum_post_save, sender=ForumPost)
+post_save.connect(forum_reply_save, sender=ForumReply)
 post_save.connect(forum_subscription_save, sender=ThreadSubscription)
