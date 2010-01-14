@@ -88,6 +88,9 @@ class ForumThread(models.Model):
     last_modified = models.DateTimeField(default=datetime.now)
     last_reply = models.ForeignKey("ForumReply", null=True) # only temporarily null
     
+    # @@@ sticky threads
+    # @@@ closed threads
+    
     view_count = models.IntegerField(default=0, editable=False)
     reply_count = models.IntegerField(default=0, editable=False)
     subscriber_count = models.IntegerField(default=0, editable=False)
