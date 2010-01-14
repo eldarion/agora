@@ -88,6 +88,7 @@ class ForumThread(models.Model):
     last_modified = models.DateTimeField(default=datetime.now)
     last_reply = models.ForeignKey("ForumReply", null=True) # only temporarily null
     
+    # @@@ support markup
     content = models.TextField()
     
     # @@@ sticky threads
@@ -128,6 +129,7 @@ class ForumReply(models.Model):
     author = models.ForeignKey(User, related_name="replies")
     timestamp = models.DateTimeField(default=datetime.now)
     
+    # @@@ support markup
     content = models.TextField()
     
     # allow editing for short period after posting
