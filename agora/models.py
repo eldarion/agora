@@ -150,6 +150,9 @@ class ThreadSubscription(models.Model):
     
     thread = models.ForeignKey(ForumThread, related_name="subscriptions")
     user = models.ForeignKey(User, related_name="forum_subscriptions")
+    
+    class Meta:
+          unique_together = [("thread", "user")]
 
 
 def forum_thread_save(sender, instance=None, created=False, **kwargs):
