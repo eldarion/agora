@@ -178,3 +178,5 @@ def forum_subscription_save(sender, instance=None, created=False, **kwargs):
 post_save.connect(forum_thread_save, sender=ForumThread)
 post_save.connect(forum_reply_save, sender=ForumReply)
 post_save.connect(forum_subscription_save, sender=ThreadSubscription)
+
+# @@@ handling unsubscribe?
