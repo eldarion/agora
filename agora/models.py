@@ -164,6 +164,7 @@ def forum_reply_save(sender, instance=None, created=False, **kwargs):
         post_count.count += 1
         post_count.save()
         issue_update("forum_reply", user=instance.author, forum_reply=instance)
+        # @@@ where do subscribers get notified?
 
 
 def forum_subscription_save(sender, instance=None, created=False, **kwargs):
