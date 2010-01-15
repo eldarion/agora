@@ -12,8 +12,10 @@ def issue_update(kind, **kwargs):
 
 class ForumCategory(models.Model):
     
-    name = models.CharField(max_length=100)
+    title = models.CharField(max_length=100)
+    
     parent = models.ForeignKey("self", null=True, blank=True, related_name="subcategories")
+    
     # @@@ total descendant forum count?
     # @@@ make group-aware
     
@@ -28,7 +30,6 @@ class Forum(models.Model):
     
     title = models.CharField(max_length=100)
     description = models.TextField()
-    creation_date = models.DateTimeField(default=datetime.now)
     
     # must only have one of these (or neither):
     parent = models.ForeignKey("self", null=True, blank=True, related_name="subforums")
@@ -83,8 +84,10 @@ class ForumThread(models.Model):
     forum = models.ForeignKey(Forum, related_name="threads")
     
     title = models.CharField(max_length=100)
-    creation_date = models.DateTimeField(default=datetime.now)
+    
+    created = models.DateTimeField(default=datetime.now)
     author = models.ForeignKey(User, related_name="threads_started")
+    
     last_modified = models.DateTimeField(default=datetime.now)
     last_reply = models.ForeignKey("ForumReply", null=True) # only temporarily null
     
@@ -127,7 +130,7 @@ class ForumReply(models.Model):
     thread = models.ForeignKey(ForumThread, related_name="replies")
     
     author = models.ForeignKey(User, related_name="replies")
-    timestamp = models.DateTimeField(default=datetime.now)
+    created = models.DateTimeField(default=datetime.now)
     
     # @@@ support markup
     content = models.TextField()
