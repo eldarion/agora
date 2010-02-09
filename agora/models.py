@@ -4,6 +4,8 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save
 
+from django.contrib.auth.models import User
+
 
 # this is the glue to the activity events framework, provided as a no-op here
 def issue_update(kind, **kwargs):
