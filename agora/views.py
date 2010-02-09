@@ -63,7 +63,7 @@ def forum_thread(request, thread_id):
     if request.method == "POST" and request.user.is_authenticated:
         member = request.user.get_profile()
         content = request.POST.get("content")
-        reply = ForumReply(thread=thread, author=member, content=content)
+        reply = ForumReply(thread=thread, author=request.user, content=content)
         reply.save()
         
         # earn_game_points(member, "POSTED_FORUM_REPLY")
