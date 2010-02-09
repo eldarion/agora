@@ -15,11 +15,11 @@ def forums(request):
     most_viewed_forums = Forum.objects.order_by("-view_count")[:5]
     most_active_members = UserPostCount.objects.order_by("-count")[:5]
     
-    latest_posts = ForumReply.objects.order_by("-timestamp")[:10]
+    latest_posts = ForumReply.objects.order_by("-created")[:10]
     latest_threads = ForumThread.objects.order_by("-last_modified")[:10]
     most_active_threads = ForumThread.objects.order_by("-reply_count")[:10]
     most_viewed_threads = ForumThread.objects.order_by("-view_count")[:10]
-
+    
     return render_to_response("agora/forums.html", {
         "categories": categories,
         "most_active_forums": most_active_forums,
