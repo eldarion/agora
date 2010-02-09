@@ -1,6 +1,6 @@
 #from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.template import RequestContext
-from django.shortcuts import render_to_response # get_object_or_404
+from django.shortcuts import get_object_or_404, render_to_response
 
 from django.contrib.auth.decorators import login_required
 
@@ -38,13 +38,9 @@ def forum_category(request, category_id):
     
     forums = category.forums.order_by("title")
     
-    object_list = ObjectList(forums, request.GET, per_page=20)
-    
     return render_to_response("agora/category.html", {
         "category": category,
-        "page_number": object_list.page_number(),
-        "paginator": object_list.paginator,
-        "page": object_list.page,
+        "forums": forums,
     }, context_instance=RequestContext(request))
 
 
