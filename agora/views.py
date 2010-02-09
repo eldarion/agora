@@ -84,7 +84,7 @@ def forum_thread(request, thread_id):
 
 
 @login_required
-def new_forum_post(request, forum_id):
+def new_post(request, forum_id):
     
     member = request.user.get_profile()
     forum = get_object_or_404(Forum, id=forum_id)
@@ -100,14 +100,14 @@ def new_forum_post(request, forum_id):
         
         return HttpResponseRedirect(reverse("agora_thread", args=[thread.id]))
     
-    return render_to_response("agora/new_forum_post.html", {
+    return render_to_response("agora/new_post.html", {
         "member": member,
         "forum_id": forum_id,
     }, context_instance=RequestContext(request))
 
 
 @login_required
-def forum_reply(request, thread_id):
+def reply(request, thread_id):
     
     member = request.user.get_profile()
     thread = get_object_or_404(ForumThread, id=thread_id)
@@ -123,14 +123,14 @@ def forum_reply(request, thread_id):
     if request.method == "POST":
         content = request.POST.get("content")
         
-        reply = ForumReply(thread=thread, author=member, content=content)
+        reply = ForumReply(thread=thread, author=request.user, content=content)
         reply.save()
         
         # earn_game_points(member, "POSTED_FORUM_REPLY")
         
         return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
     
-    return render_to_response("agora/forum_reply.html", {
+    return render_to_response("agora/reply.html", {
         "member": member,
         "thread_id": thread_id,
         "quote_content": quote_content,
@@ -138,7 +138,7 @@ def forum_reply(request, thread_id):
 
 
 @login_required
-def forum_reply_edit(request, reply_id):
+def reply_edit(request, reply_id):
     member = request.user.get_profile()
     reply = get_object_or_404(ForumReply, id=reply_id)
     thread_id = reply.thread.id
@@ -154,7 +154,7 @@ def forum_reply_edit(request, reply_id):
         
         return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
     
-    return render_to_response("agora/forum_reply_edit.html", {
+    return render_to_response("agora/reply_edit.html", {
         "member": member,
         "reply": reply,
     }, context_instance=RequestContext(request))
