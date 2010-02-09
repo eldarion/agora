@@ -71,7 +71,7 @@ def forum_thread(request, thread_id):
     
     order_type = request.GET.get("order_type", "asc")
     
-    posts = thread.replies.order_by("%stimestamp" % (order_type == "desc" and "-" or ""))
+    posts = thread.replies.order_by("%screated" % (order_type == "desc" and "-" or ""))
     
     thread.inc_views()
     
@@ -92,7 +92,7 @@ def new_forum_post(request, forum_id):
         title = request.POST.get("title")
         content = request.POST.get("content")
         
-        thread = ForumThread(forum=forum, title=title, author=member)
+        thread = ForumThread(forum=forum, title=title, author=request.user)
         thread.save()
         
         reply = ForumReply(thread=thread, author=member, content=content, is_first=True)

@@ -71,7 +71,7 @@ class Forum(models.Model):
     
     def new_reply(self, reply):
         self.reply_count += 1 # if this gets out of sync run update_reply_count
-        self.last_modified = reply.timestamp
+        self.last_modified = reply.created
         self.last_reply = reply
         self.save()
         if self.parent:
@@ -118,7 +118,7 @@ class ForumThread(models.Model):
     
     def new_reply(self, reply):
         self.reply_count += 1
-        self.last_modified = reply.timestamp
+        self.last_modified = reply.created
         self.last_reply = reply
         self.save()
         self.forum.new_reply(reply)
@@ -144,7 +144,7 @@ class ForumReply(models.Model):
     # allow editing for short period after posting
     def editable(self, user):
         if user == self.author:
-            if datetime.now() < self.timestamp + timedelta(minutes=30): # @@@ factor out time interval
+            if datetime.now() < self.created + timedelta(minutes=30): # @@@ factor out time interval
                 return True
         return False
 
