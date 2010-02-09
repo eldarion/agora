@@ -25,7 +25,7 @@ class ForumCategory(models.Model):
         verbose_name_plural = "forum categories"
     
     def __unicode__(self):
-        return self.name
+        return self.title
 
 
 class Forum(models.Model):
@@ -39,7 +39,7 @@ class Forum(models.Model):
     
     # @@@ make group-aware
     
-    last_modified = models.DateTimeField(default=datetime.now)
+    last_modified = models.DateTimeField(default=datetime.now, editable=False)
     last_reply = models.ForeignKey("ForumReply", null=True, editable=False)
     
     view_count = models.IntegerField(default=0, editable=False)
@@ -87,11 +87,11 @@ class ForumThread(models.Model):
     
     title = models.CharField(max_length=100)
     
-    created = models.DateTimeField(default=datetime.now)
+    created = models.DateTimeField(default=datetime.now, editable=False)
     author = models.ForeignKey(User, related_name="threads_started")
     
-    last_modified = models.DateTimeField(default=datetime.now)
-    last_reply = models.ForeignKey("ForumReply", null=True) # only temporarily null
+    last_modified = models.DateTimeField(default=datetime.now, editable=False)
+    last_reply = models.ForeignKey("ForumReply", null=True, editable=False) # only temporarily null
     
     # @@@ support markup
     content = models.TextField()
@@ -132,10 +132,14 @@ class ForumReply(models.Model):
     thread = models.ForeignKey(ForumThread, related_name="replies")
     
     author = models.ForeignKey(User, related_name="replies")
-    created = models.DateTimeField(default=datetime.now)
+    created = models.DateTimeField(default=datetime.now, editable=False)
     
     # @@@ support markup
     content = models.TextField()
+    
+    class Meta:
+        verbose_name = "forum reply"
+        verbose_name_plural = "forum replies"
     
     # allow editing for short period after posting
     def editable(self, user):
