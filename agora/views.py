@@ -1,4 +1,5 @@
-#from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response
 
@@ -67,7 +68,7 @@ def forum_thread(request, thread_id):
         
         # earn_game_points(member, "POSTED_FORUM_REPLY")
         
-        return HttpResponseRedirect(reverse("agora_forum_thread", args=[thread_id]))
+        return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
     
     order_type = request.GET.get("order_type", "asc")
     
@@ -92,15 +93,12 @@ def new_forum_post(request, forum_id):
         title = request.POST.get("title")
         content = request.POST.get("content")
         
-        thread = ForumThread(forum=forum, title=title, author=request.user)
+        thread = ForumThread(forum=forum, title=title, content=content, author=request.user)
         thread.save()
-        
-        reply = ForumReply(thread=thread, author=member, content=content, is_first=True)
-        reply.save()
         
         # earn_points(member, "POSTED_FORUM_THREAD")
         
-        return HttpResponseRedirect(reverse("agora_forum_thread", args=[thread.id]))
+        return HttpResponseRedirect(reverse("agora_thread", args=[thread.id]))
     
     return render_to_response("agora/new_forum_post.html", {
         "member": member,
@@ -130,7 +128,7 @@ def forum_reply(request, thread_id):
         
         # earn_game_points(member, "POSTED_FORUM_REPLY")
         
-        return HttpResponseRedirect(reverse("agora_forum_thread", args=[thread_id]))
+        return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
     
     return render_to_response("agora/forum_reply.html", {
         "member": member,
@@ -154,7 +152,7 @@ def forum_reply_edit(request, reply_id):
         reply.content = content
         reply.save()
         
-        return HttpResponseRedirect(reverse("agora_forum_thread", args=[thread_id]))
+        return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
     
     return render_to_response("agora/forum_reply_edit.html", {
         "member": member,
