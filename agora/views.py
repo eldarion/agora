@@ -1,17 +1,26 @@
+#from django.http import Http404, HttpResponse, HttpResponseRedirect
+from django.template import RequestContext
+from django.shortcuts import render_to_response # get_object_or_404
+
+from django.contrib.auth.decorators import login_required
+
+from agora.models import ForumCategory, Forum, UserPostCount, ForumThread, ForumReply
+
+
 def forums(request):
     
     categories = ForumCategory.objects.filter(parent__isnull=True)
     
     most_active_forums = Forum.objects.order_by("-reply_count")[:5]
     most_viewed_forums = Forum.objects.order_by("-view_count")[:5]
-    most_active_members = MemberPostCount.objects.order_by("-count")[:5]
+    most_active_members = UserPostCount.objects.order_by("-count")[:5]
     
     latest_posts = ForumReply.objects.order_by("-timestamp")[:10]
     latest_threads = ForumThread.objects.order_by("-last_modified")[:10]
     most_active_threads = ForumThread.objects.order_by("-reply_count")[:10]
     most_viewed_threads = ForumThread.objects.order_by("-view_count")[:10]
 
-    return render_to_response("community/forums/forums.html", {
+    return render_to_response("agora/forums.html", {
         "categories": categories,
         "most_active_forums": most_active_forums,
         "most_viewed_forums": most_viewed_forums,
@@ -31,7 +40,7 @@ def forum_category(request, category_id):
     
     object_list = ObjectList(forums, request.GET, per_page=20)
     
-    return render_to_response("community/forums/category.html", {
+    return render_to_response("agora/category.html", {
         "category": category,
         "page_number": object_list.page_number(),
         "paginator": object_list.paginator,
@@ -45,7 +54,7 @@ def forum(request, forum_id):
     
     threads = forum.threads.order_by("-last_modified")
     
-    return render_to_response("community/forums/forum.html", {
+    return render_to_response("agora/forum.html", {
         "forum": forum,
         "threads": threads,
     }, context_instance=RequestContext(request))
@@ -59,8 +68,10 @@ def forum_thread(request, thread_id):
         content = request.POST.get("content")
         reply = ForumReply(thread=thread, author=member, content=content)
         reply.save()
-        earn_game_points(member, "POSTED_FORUM_REPLY")
-        return HttpResponseRedirect(reverse("community_forum_thread", args=[thread_id]))
+        
+        # earn_game_points(member, "POSTED_FORUM_REPLY")
+        
+        return HttpResponseRedirect(reverse("agora_forum_thread", args=[thread_id]))
     
     order_type = request.GET.get("order_type", "asc")
     
@@ -68,7 +79,7 @@ def forum_thread(request, thread_id):
     
     thread.inc_views()
     
-    return render_to_response("community/forums/thread.html", {
+    return render_to_response("agora/thread.html", {
         "thread": thread,
         "posts": posts,
         "order_type": order_type,
@@ -93,9 +104,9 @@ def new_forum_post(request, forum_id):
         
         # earn_points(member, "POSTED_FORUM_THREAD")
         
-        return HttpResponseRedirect(reverse("community_forum_thread", args=[thread.id]))
+        return HttpResponseRedirect(reverse("agora_forum_thread", args=[thread.id]))
     
-    return render_to_response("lightboxes/new_forum_post.html", {
+    return render_to_response("agora/new_forum_post.html", {
         "member": member,
         "forum_id": forum_id,
     }, context_instance=RequestContext(request))
@@ -121,11 +132,11 @@ def forum_reply(request, thread_id):
         reply = ForumReply(thread=thread, author=member, content=content)
         reply.save()
         
-        earn_game_points(member, "POSTED_FORUM_REPLY")
+        # earn_game_points(member, "POSTED_FORUM_REPLY")
         
-        return HttpResponseRedirect(reverse("community_forum_thread", args=[thread_id]))
+        return HttpResponseRedirect(reverse("agora_forum_thread", args=[thread_id]))
     
-    return render_to_response("lightboxes/forum_reply.html", {
+    return render_to_response("agora/forum_reply.html", {
         "member": member,
         "thread_id": thread_id,
         "quote_content": quote_content,
@@ -147,9 +158,9 @@ def forum_reply_edit(request, reply_id):
         reply.content = content
         reply.save()
         
-        return HttpResponseRedirect(reverse("community_forum_thread", args=[thread_id]))
+        return HttpResponseRedirect(reverse("agora_forum_thread", args=[thread_id]))
     
-    return render_to_response("lightboxes/forum_reply_edit.html", {
+    return render_to_response("agora/forum_reply_edit.html", {
         "member": member,
         "reply": reply,
     }, context_instance=RequestContext(request))
