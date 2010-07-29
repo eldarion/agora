@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+import datetime
 
 from django.core.urlresolvers import reverse
 from django.db import models
@@ -34,12 +34,23 @@ class Forum(models.Model):
     description = models.TextField()
     
     # must only have one of these (or neither):
-    parent = models.ForeignKey("self", null=True, blank=True, related_name="subforums")
-    category = models.ForeignKey(ForumCategory, null=True, blank=True, related_name="forums")
+    parent = models.ForeignKey("self",
+        null = True,
+        blank = True,
+        related_name = "subforums"
+    )
+    category = models.ForeignKey(ForumCategory,
+        null = True,
+        blank = True,
+        related_name = "forums"
+    )
     
     # @@@ make group-aware
     
-    last_modified = models.DateTimeField(default=datetime.now, editable=False)
+    last_modified = models.DateTimeField(
+        default = datetime.datetime.now,
+        editable = False
+    )
     last_reply = models.ForeignKey("ForumReply", null=True, editable=False)
     
     view_count = models.IntegerField(default=0, editable=False)
@@ -87,10 +98,13 @@ class ForumThread(models.Model):
     
     title = models.CharField(max_length=100)
     
-    created = models.DateTimeField(default=datetime.now, editable=False)
+    created = models.DateTimeField(default=datetime.datetime.now, editable=False)
     author = models.ForeignKey(User, related_name="threads_started")
     
-    last_modified = models.DateTimeField(default=datetime.now, editable=False)
+    last_modified = models.DateTimeField(
+        default = datetime.datetime.now,
+        editable = False
+    )
     last_reply = models.ForeignKey("ForumReply", null=True, editable=False) # only temporarily null
     
     # @@@ support markup
@@ -132,7 +146,7 @@ class ForumReply(models.Model):
     thread = models.ForeignKey(ForumThread, related_name="replies")
     
     author = models.ForeignKey(User, related_name="replies")
-    created = models.DateTimeField(default=datetime.now, editable=False)
+    created = models.DateTimeField(default=datetime.datetime.now, editable=False)
     
     # @@@ support markup
     content = models.TextField()
@@ -144,7 +158,7 @@ class ForumReply(models.Model):
     # allow editing for short period after posting
     def editable(self, user):
         if user == self.author:
-            if datetime.now() < self.created + timedelta(minutes=30): # @@@ factor out time interval
+            if datetime.datetime.now() < self.created + datetime.timedelta(minutes=30): # @@@ factor out time interval
                 return True
         return False
 

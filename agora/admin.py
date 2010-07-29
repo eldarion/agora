@@ -3,7 +3,6 @@ from django.contrib import admin
 from agora import models
 
 
-
 class ForumThreadAdmin(admin.ModelAdmin):
     
     class ForumThreadReplyInline(admin.StackedInline):
@@ -26,9 +25,19 @@ class ForumThreadAdmin(admin.ModelAdmin):
 
 
 admin.site.register(models.ForumCategory,
-    list_display = ["title", "parent"]
+    list_display = [
+        "title",
+        "parent"
+    ]
 )
 admin.site.register(models.Forum,
-    list_display = ["id", "title", "parent", "category", "view_count", "reply_count"]
+    list_display = [
+        "id",
+        "title",
+        "parent",
+        "category",
+        "view_count",
+        "reply_count"
+    ]
 )
 admin.site.register(models.ForumThread, ForumThreadAdmin)
