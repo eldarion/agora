@@ -1,11 +1,22 @@
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response
 
 from django.contrib.auth.decorators import login_required
 
 from agora.models import ForumCategory, Forum, UserPostCount, ForumThread, ForumReply
+
+
+def ajax(func):
+    def _wrapped_view(request, *args, **kwargs):
+        try:
+            return func(request, *args, **kwargs)
+        except:
+            import sys
+            print sys.exc_info()
+            raise
+    return _wrapped_view
 
 
 def forums(request):
@@ -83,6 +94,7 @@ def forum_thread(request, thread_id):
     }, context_instance=RequestContext(request))
 
 
+@ajax
 @login_required
 def new_post(request, forum_id):
     
@@ -106,6 +118,7 @@ def new_post(request, forum_id):
     }, context_instance=RequestContext(request))
 
 
+@ajax
 @login_required
 def reply(request, thread_id):
     
@@ -137,13 +150,14 @@ def reply(request, thread_id):
     }, context_instance=RequestContext(request))
 
 
+@ajax
 @login_required
 def reply_edit(request, reply_id):
     member = request.user.get_profile()
     reply = get_object_or_404(ForumReply, id=reply_id)
     thread_id = reply.thread.id
     
-    if not reply.editable(member):
+    if not reply.editable(request.user):
         raise Http404()
     
     if request.method == "POST":

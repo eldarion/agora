@@ -26,6 +26,9 @@ class ForumCategory(models.Model):
     
     def __unicode__(self):
         return self.title
+    
+    def get_absolute_url(self):
+        return reverse("agora_category", args=(self.pk,))
 
 
 class Forum(models.Model):
@@ -139,6 +142,9 @@ class ForumThread(models.Model):
     
     def __unicode__(self):
         return self.title
+    
+    def editable(self, user):
+        return False
 
 
 class ForumReply(models.Model):
