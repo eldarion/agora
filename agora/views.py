@@ -83,7 +83,7 @@ def forum_thread(request, thread_id):
     
     order_type = request.GET.get("order_type", "asc")
     
-    posts = ForumThread.objects.posts(thread, reverse=order_type == "desc")
+    posts = ForumThread.objects.posts(thread, reverse=(order_type == "desc"))
     
     thread.inc_views()
     

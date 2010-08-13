@@ -117,6 +117,9 @@ class ForumPost(models.Model):
 
 class ForumThread(ForumPost):
     
+    # used for code that needs to know the kind of post this object is.
+    kind = "thread"
+    
     forum = models.ForeignKey(Forum, related_name="threads")
     
     title = models.CharField(max_length=100)
@@ -161,6 +164,9 @@ class ForumThread(ForumPost):
 
 
 class ForumReply(ForumPost):
+    
+    # used for code that needs to know the kind of post this object is.
+    kind = "reply"
     
     thread = models.ForeignKey(ForumThread, related_name="replies")
     
