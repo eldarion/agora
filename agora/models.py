@@ -95,23 +95,35 @@ class Forum(models.Model):
         return self.title
 
 
-class ForumThread(models.Model):
+class ForumPost(models.Model):
+    
+    author = models.ForeignKey(User, related_name="%(app_label)s_%(class)s_related")
+    # @@@ support markup
+    content = models.TextField()
+    created = models.DateTimeField(default=datetime.datetime.now, editable=False)
+    
+    class Meta:
+        abstract = True
+    
+    # allow editing for short period after posting
+    def editable(self, user):
+        if user == self.author:
+            if datetime.datetime.now() < self.created + datetime.timedelta(minutes=30): # @@@ factor out time interval
+                return True
+        return False
+
+
+class ForumThread(ForumPost):
     
     forum = models.ForeignKey(Forum, related_name="threads")
     
     title = models.CharField(max_length=100)
-    
-    created = models.DateTimeField(default=datetime.datetime.now, editable=False)
-    author = models.ForeignKey(User, related_name="threads_started")
     
     last_modified = models.DateTimeField(
         default = datetime.datetime.now,
         editable = False
     )
     last_reply = models.ForeignKey("ForumReply", null=True, editable=False) # only temporarily null
-    
-    # @@@ support markup
-    content = models.TextField()
     
     # @@@ sticky threads
     # @@@ closed threads
@@ -142,31 +154,15 @@ class ForumThread(models.Model):
     
     def __unicode__(self):
         return self.title
-    
-    def editable(self, user):
-        return False
 
 
-class ForumReply(models.Model):
+class ForumReply(ForumPost):
     
     thread = models.ForeignKey(ForumThread, related_name="replies")
-    
-    author = models.ForeignKey(User, related_name="replies")
-    created = models.DateTimeField(default=datetime.datetime.now, editable=False)
-    
-    # @@@ support markup
-    content = models.TextField()
     
     class Meta:
         verbose_name = "forum reply"
         verbose_name_plural = "forum replies"
-    
-    # allow editing for short period after posting
-    def editable(self, user):
-        if user == self.author:
-            if datetime.datetime.now() < self.created + datetime.timedelta(minutes=30): # @@@ factor out time interval
-                return True
-        return False
 
 
 class UserPostCount(models.Model):
