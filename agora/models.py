@@ -6,6 +6,8 @@ from django.db.models.signals import post_save
 
 from django.contrib.auth.models import User
 
+from agora.managers import ForumThreadManager
+
 
 # this is the glue to the activity events framework, provided as a no-op here
 def issue_update(kind, **kwargs):
@@ -131,6 +133,8 @@ class ForumThread(ForumPost):
     view_count = models.IntegerField(default=0, editable=False)
     reply_count = models.IntegerField(default=0, editable=False)
     subscriber_count = models.IntegerField(default=0, editable=False)
+    
+    objects = ForumThreadManager()
     
     def inc_views(self):
         self.view_count += 1
