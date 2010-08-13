@@ -152,23 +152,31 @@ def reply(request, thread_id):
 
 @ajax
 @login_required
-def reply_edit(request, reply_id):
+def post_edit(request, post_kind, post_id):
     member = request.user.get_profile()
-    reply = get_object_or_404(ForumReply, id=reply_id)
-    thread_id = reply.thread.id
     
-    if not reply.editable(request.user):
+    if post_kind == "thread":
+        post = get_object_or_404(ForumThread, id=post_id)
+        thread_id = post.id
+    elif post_kind == "reply":
+        post = get_object_or_404(ForumReply, id=post_id)
+        thread_id = post.thread.id
+    else:
+        raise Http404
+    
+    if not post.editable(request.user):
         raise Http404()
     
     if request.method == "POST":
         content = request.POST.get("content")
         
-        reply.content = content
-        reply.save()
+        post.content = content
+        post.save()
         
         return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
     
-    return render_to_response("agora/reply_edit.html", {
+    return render_to_response("agora/post_edit.html", {
         "member": member,
-        "reply": reply,
+        "post_kind": post_kind,
+        "post": post,
     }, context_instance=RequestContext(request))
