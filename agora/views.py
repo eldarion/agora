@@ -5,7 +5,8 @@ from django.shortcuts import get_object_or_404, render_to_response
 
 from django.contrib.auth.decorators import login_required
 
-from agora.models import ForumCategory, Forum, UserPostCount, ForumThread, ForumReply
+from agora.models import ForumCategory, Forum, UserPostCount
+from agota.models import ForumThread, ForumReply, ThreadSubscription
 
 
 def ajax(func):
@@ -180,3 +181,33 @@ def post_edit(request, post_kind, post_id):
         "post_kind": post_kind,
         "post": post,
     }, context_instance=RequestContext(request))
+
+
+@ajax
+@login_required
+def subscribe(request, thread_id):
+    user = request.user
+    thread = get_object_or_404(ForumThread, pk=thread_id)
+    
+    if request.method == "POST":
+        subscription, created = ThreadSubscription.objects.get_or_create(
+            user = user,
+            thread = thread
+        )
+        if created:
+            subscription.save()
+        
+    return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
+
+
+@ajax
+@login_required
+def unsubscribe(request, thread_id):
+    user = request.user
+    thread = get_object_or_404(ForumThread, pk=thread_id)
+    
+    if request.method == "POST":
+        subscription = get_object_or_404(ThreadSubscription, user=user, thread=thread)
+        subscription.delete()
+        
+    return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))

@@ -9,4 +9,6 @@ urlpatterns = patterns("",
     url(r"^new_post/(\d+)/$", "agora.views.new_post", name="agora_new_post"),
     url(r"^reply/(\d+)/$", "agora.views.reply", name="agora_reply"),
     url(r"^post_edit/(thread|reply)/(\d+)/$", "agora.views.post_edit", name="agora_post_edit"),
+    url(r"^subscribe/(\d+)/$", "agora.views.subscribe", name="agora_subscribe"),
+    url(r"^unsubscribe/(\d+)/$", "agora.views.unsubscribe", name="agora_unsubscribe"),
 )
