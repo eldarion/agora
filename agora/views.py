@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, render_to_response
 from django.contrib.auth.decorators import login_required
 
 from agora.models import ForumCategory, Forum, UserPostCount
-from agota.models import ForumThread, ForumReply, ThreadSubscription
+from agora.models import ForumThread, ForumReply, ThreadSubscription
 
 
 def ajax(func):
