@@ -190,11 +190,20 @@ class ThreadSubscription(models.Model):
           unique_together = [("thread", "user")]
 
 
+def signal(s, sender=None):
+    def _wrapped(func):
+        s.connect(func, sender=sender)
+        return func
+    return _wrapped
+
+
+@signal(post_save, ForumThread)
 def forum_thread_save(sender, instance=None, created=False, **kwargs):
     if instance and created:
         issue_update("forum_thread", user=instance.author, forum_thread=instance)
 
 
+@signal(post_save, ForumReply)
 def forum_reply_save(sender, instance=None, created=False, **kwargs):
     if instance and created:
         thread = instance.thread
@@ -207,16 +216,11 @@ def forum_reply_save(sender, instance=None, created=False, **kwargs):
         # @@@ where do subscribers get notified?
 
 
+@signal(post_save, ThreadSubscription)
 def forum_subscription_save(sender, instance=None, created=False, **kwargs):
     if instance and created:
         thread = instance.thread
         thread.update_subscriber_count()
 
-
-post_save.connect(forum_thread_save, sender=ForumThread)
-post_save.connect(forum_reply_save, sender=ForumReply)
-post_save.connect(forum_subscription_save, sender=ThreadSubscription)
-
-# @@@ handling unsubscribe?
 
 # @@@ handling deletion? (e.g. counts, last_modified, last_reply)
