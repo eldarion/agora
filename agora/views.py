@@ -73,12 +73,19 @@ def forum_thread(request, thread_id):
     thread = get_object_or_404(ForumThread, id=thread_id)
     
     if request.method == "POST" and request.user.is_authenticated:
-        member = request.user.get_profile()
+        
         content = request.POST.get("content")
+        subscribe = {"true": True, "false": False, False: False}.get(request.POST.get("subscribe", False), True)
+        
         reply = ForumReply(thread=thread, author=request.user, content=content)
         reply.save()
         
-        # earn_game_points(member, "POSTED_FORUM_REPLY")
+        # subscribe the poster to the thread if requested (default value is True)
+        if subscribe:
+            print "subscribing"
+            thread.subscribe(reply.author)
+        else:
+            print "NOT subscribing"
         
         return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
     
@@ -92,6 +99,7 @@ def forum_thread(request, thread_id):
         "thread": thread,
         "posts": posts,
         "order_type": order_type,
+        "subscribed": thread.subscribed(request.user),
     }, context_instance=RequestContext(request))
 
 
@@ -103,13 +111,17 @@ def new_post(request, forum_id):
     forum = get_object_or_404(Forum, id=forum_id)
     
     if request.method == "POST":
+        
         title = request.POST.get("title")
         content = request.POST.get("content")
+        subscribe = {"true": True, "false": False, False: False}.get(request.POST.get("subscribe", False), True)
         
         thread = ForumThread(forum=forum, title=title, content=content, author=request.user)
         thread.save()
         
-        # earn_points(member, "POSTED_FORUM_THREAD")
+        # subscribe the poster to the thread if requested (default value is True)
+        if subscribe:
+            thread.subscribe(thread.author)
         
         return HttpResponseRedirect(reverse("agora_thread", args=[thread.id]))
     
@@ -136,18 +148,25 @@ def reply(request, thread_id):
     
     if request.method == "POST":
         content = request.POST.get("content")
+        subscribe = {"true": True, "false": False, False: False}.get(request.POST.get("subscribe", False), True)
         
         reply = ForumReply(thread=thread, author=request.user, content=content)
         reply.save()
         
-        # earn_game_points(member, "POSTED_FORUM_REPLY")
+        # subscribe the poster to the thread if requested (default value is True)
+        if subscribe:
+            thread.subscribe(reply.author)
         
         return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
+    
+    first_reply = not ForumReply.objects.filter(thread=thread, author=request.user).exists()
     
     return render_to_response("agora/reply.html", {
         "member": member,
         "thread_id": thread_id,
         "quote_content": quote_content,
+        "subscribed": thread.subscribed(request.user),
+        "first_reply": first_reply,
     }, context_instance=RequestContext(request))
 
 
@@ -190,14 +209,11 @@ def subscribe(request, thread_id):
     thread = get_object_or_404(ForumThread, pk=thread_id)
     
     if request.method == "POST":
-        subscription, created = ThreadSubscription.objects.get_or_create(
-            user = user,
-            thread = thread
-        )
-        if created:
-            subscription.save()
-        
-    return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
+        thread.subscribe(user)
+        return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
+    else:
+        ctx = RequestContext(request, {"thread": thread})
+        return render_to_response("agora/subscribe.html", ctx)
 
 
 @ajax
@@ -207,7 +223,8 @@ def unsubscribe(request, thread_id):
     thread = get_object_or_404(ForumThread, pk=thread_id)
     
     if request.method == "POST":
-        subscription = get_object_or_404(ThreadSubscription, user=user, thread=thread)
-        subscription.delete()
-        
-    return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
+        thread.unsubscribe(user)
+        return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
+    else:
+        ctx = RequestContext(request, {"thread": thread})
+        return render_to_response("agora/unsubscribe.html", ctx)

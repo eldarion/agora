@@ -2,7 +2,7 @@ import datetime
 
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 
 from django.contrib.auth.models import User
 
@@ -159,6 +159,30 @@ class ForumThread(ForumPost):
         self.save()
         self.forum.new_reply(reply)
     
+    def subscribe(self, user):
+        """
+        Subscribes the given user to this thread (handling duplicates)
+        """
+        ThreadSubscription.objects.get_or_create(thread=self, user=user)
+    
+    def unsubscribe(self, user):
+        try:
+            subscription = ThreadSubscription.objects.get(thread=self, user=user)
+        except ThreadSubscription.DoesNotExist:
+            return
+        else:
+            subscription.delete()
+    
+    def subscribed(self, user):
+        if user.is_anonymous():
+            return False
+        try:
+            ThreadSubscription.objects.get(thread=self, user=user)
+        except ThreadSubscription.DoesNotExist:
+            return False
+        else:
+            return True
+    
     def __unicode__(self):
         return self.title
 
@@ -187,20 +211,19 @@ class ThreadSubscription(models.Model):
     user = models.ForeignKey(User, related_name="forum_subscriptions")
     
     class Meta:
-          unique_together = [("thread", "user")]
+        unique_together = [("thread", "user")]
 
 
-def signal(s, sender=None):
+def signal(signals, sender=None):
     def _wrapped(func):
-        s.connect(func, sender=sender)
+        if not hasattr(signals, "__iter__"):
+            _s = [signals]
+        else:
+            _s = signals
+        for s in _s:
+            s.connect(func, sender=sender)
         return func
     return _wrapped
-
-
-@signal(post_save, ForumThread)
-def forum_thread_save(sender, instance=None, created=False, **kwargs):
-    if instance and created:
-        issue_update("forum_thread", user=instance.author, forum_thread=instance)
 
 
 @signal(post_save, ForumReply)
@@ -208,16 +231,15 @@ def forum_reply_save(sender, instance=None, created=False, **kwargs):
     if instance and created:
         thread = instance.thread
         thread.new_reply(instance)
+        
         # @@@ this next part could be manager method
         post_count, created = UserPostCount.objects.get_or_create(user=instance.author)
         post_count.count += 1
         post_count.save()
-        issue_update("forum_reply", user=instance.author, forum_reply=instance)
-        # @@@ where do subscribers get notified?
 
 
-@signal(post_save, ThreadSubscription)
-def forum_subscription_save(sender, instance=None, created=False, **kwargs):
+@signal([post_save, post_delete], ThreadSubscription)
+def forum_subscription_update(sender, instance=None, created=False, **kwargs):
     if instance and created:
         thread = instance.thread
         thread.update_subscriber_count()

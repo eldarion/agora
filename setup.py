@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name = "agora",
-    version = "0.1.dev7",
+    version = "0.1.dev8",
     author = "Eldarion",
     author_email = "development@eldarion.com",
     description = "an extensible forum app for Django and Pinax",
