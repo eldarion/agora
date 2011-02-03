@@ -3,6 +3,7 @@ import datetime
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save, post_delete
+from django.utils import simplejson as json
 
 from django.contrib.auth.models import User
 
@@ -95,6 +96,106 @@ class Forum(models.Model):
     
     def __unicode__(self):
         return self.title
+    
+    def export(self, out=None):
+        if out is None:
+            out = "forum-export-%d.json" % self.id
+        data = {
+            "self": {
+                "id": self.id,
+                "title": self.title,
+                "description": self.description,
+                "parent": self.parent_id,
+                "category": self.category_id,
+                "last_modified": self.last_modified.strftime("%Y-%m-%d %H:%M:%S"),
+                "last_reply": self.last_reply_id,
+                "view_count": self.view_count,
+                "reply_count": self.reply_count
+            },
+            "threads": [
+                {
+                    "id": t.id,
+                    "author": t.author_id,
+                    "content": t.content,
+                    "created": t.created.strftime("%Y-%m-%d %H:%M:%S"),
+                    "forum": t.forum_id,
+                    "title": t.title,
+                    "last_modified": t.last_modified.strftime("%Y-%m-%d %H:%M:%S"),
+                    "last_reply": t.last_reply_id,
+                    "view_count": t.view_count,
+                    "reply_count": t.reply_count,
+                    "subscriber_count": t.subscriber_count,
+                    "replies": [
+                        {
+                            "id": r.id,
+                            "author": r.author_id,
+                            "content": r.content,
+                            "created": r.created.strftime("%Y-%m-%d %H:%M:%S"),
+                            "thread": r.thread_id,
+                        }
+                        for r in t.replies.all()
+                    ],
+                    "subscriptions": [
+                        {
+                            "id": s.id,
+                            "thread": s.thread_id,
+                            "user": s.user_id,
+                        }
+                        for s in t.subscriptions.all()
+                    ]
+                }
+                for t in self.threads.all()
+            ]
+        }
+        json.dump(data, open(out, "wb"))
+    
+    @classmethod
+    def restore(cls, in_):
+        data = json.load(open(in_))
+        forum = Forum(**dict(
+            id = data["self"]["id"],
+            title = data["self"]["title"],
+            description = data["self"]["description"],
+            parent_id = data["self"]["parent"],
+            category_id = data["self"]["category"],
+            last_modified = data["self"]["last_modified"],
+            view_count = data["self"]["view_count"],
+            reply_count = data["self"]["reply_count"]
+        ))
+        forum.save()
+        for thread_data in data["threads"]:
+            thread = ForumThread(**dict(
+                id = thread_data["id"],
+                author_id = thread_data["author"],
+                content = thread_data["content"],
+                created = thread_data["created"],
+                forum_id = thread_data["forum"],
+                title = thread_data["title"],
+                last_modified = thread_data["last_modified"],
+                view_count = thread_data["view_count"],
+                reply_count = thread_data["reply_count"],
+                subscriber_count = thread_data["subscriber_count"]
+            ))
+            thread.save()
+            for reply_data in thread_data["replies"]:
+                reply = ForumReply(**dict(
+                    id = reply_data["id"],
+                    author_id = reply_data["author"],
+                    content = reply_data["content"],
+                    created = reply_data["created"],
+                    thread_id = reply_data["thread"],
+                ))
+                reply.save()
+            for subscriber_data in thread_data["subscriptions"]:
+                ThreadSubscription(**dict(
+                    id = subscriber_data["id"],
+                    user_id = subscriber_data["user"],
+                    thread_id = subscriber_data["thread"],
+                )).save()
+            thread.last_reply_id = thread_data["last_reply"]
+            thread.save()
+        forum.last_reply_id = data["self"]["last_reply"]
+        forum.save()
 
 
 class ForumPost(models.Model):
