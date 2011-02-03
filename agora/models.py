@@ -307,6 +307,20 @@ class UserPostCount(models.Model):
     
     user = models.ForeignKey(User, related_name="post_count")
     count = models.IntegerField(default=0)
+    
+    @classmethod
+    def calculate(cls):
+        for user in User.objects.all():
+            count = ForumReply.objects.filter(author=user).count()
+            upc, created = cls._default_manager.get_or_create(
+                user = user,
+                defaults = dict(
+                    count = count
+                )
+            )
+            if not created:
+                upc.count = count
+                upc.save()
 
 
 class ThreadSubscription(models.Model):
