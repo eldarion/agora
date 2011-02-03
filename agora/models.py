@@ -162,6 +162,7 @@ class Forum(models.Model):
             view_count = data["self"]["view_count"],
             reply_count = data["self"]["reply_count"]
         ))
+        forum._importing = True
         forum.save()
         for thread_data in data["threads"]:
             thread = ForumThread(**dict(
@@ -176,6 +177,7 @@ class Forum(models.Model):
                 reply_count = thread_data["reply_count"],
                 subscriber_count = thread_data["subscriber_count"]
             ))
+            thread._importing = True
             thread.save()
             for reply_data in thread_data["replies"]:
                 reply = ForumReply(**dict(
@@ -185,6 +187,7 @@ class Forum(models.Model):
                     created = reply_data["created"],
                     thread_id = reply_data["thread"],
                 ))
+                reply._importing = True
                 reply.save()
             for subscriber_data in thread_data["subscriptions"]:
                 ThreadSubscription(**dict(
