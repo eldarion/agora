@@ -11,4 +11,5 @@ urlpatterns = patterns("",
     url(r"^post_edit/(thread|reply)/(\d+)/$", "agora.views.post_edit", name="agora_post_edit"),
     url(r"^subscribe/(\d+)/$", "agora.views.subscribe", name="agora_subscribe"),
     url(r"^unsubscribe/(\d+)/$", "agora.views.unsubscribe", name="agora_unsubscribe"),
+    url(r"^thread_updates/$", "agora.views.thread_updates", name="agora_thread_updates"),
 )

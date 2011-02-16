@@ -82,10 +82,10 @@ def forum_thread(request, thread_id):
         
         # subscribe the poster to the thread if requested (default value is True)
         if subscribe:
-            print "subscribing"
-            thread.subscribe(reply.author)
-        else:
-            print "NOT subscribing"
+            thread.subscribe(reply.author, "email")
+        
+        # all users are automatically subscribed to onsite
+        thread.subscribe(reply.author, "onsite")
         
         return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
     
@@ -99,7 +99,7 @@ def forum_thread(request, thread_id):
         "thread": thread,
         "posts": posts,
         "order_type": order_type,
-        "subscribed": thread.subscribed(request.user),
+        "subscribed": thread.subscribed(request.user, "email"),
     }, context_instance=RequestContext(request))
 
 
@@ -121,7 +121,10 @@ def new_post(request, forum_id):
         
         # subscribe the poster to the thread if requested (default value is True)
         if subscribe:
-            thread.subscribe(thread.author)
+            thread.subscribe(thread.author, "email")
+        
+        # all users are automatically subscribed to onsite
+        thread.subscribe(thread.author, "onsite")
         
         return HttpResponseRedirect(reverse("agora_thread", args=[thread.id]))
     
@@ -155,7 +158,10 @@ def reply(request, thread_id):
         
         # subscribe the poster to the thread if requested (default value is True)
         if subscribe:
-            thread.subscribe(reply.author)
+            thread.subscribe(reply.author, "email")
+        
+        # all users are automatically subscribed to onsite
+        thread.subscribe(reply.author, "onsite")
         
         return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
     
@@ -165,7 +171,7 @@ def reply(request, thread_id):
         "member": member,
         "thread_id": thread_id,
         "quote_content": quote_content,
-        "subscribed": thread.subscribed(request.user),
+        "subscribed": thread.subscribed(request.user, "email"),
         "first_reply": first_reply,
     }, context_instance=RequestContext(request))
 
@@ -209,7 +215,7 @@ def subscribe(request, thread_id):
     thread = get_object_or_404(ForumThread, pk=thread_id)
     
     if request.method == "POST":
-        thread.subscribe(user)
+        thread.subscribe(user, "email")
         return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
     else:
         ctx = RequestContext(request, {"thread": thread})
@@ -223,8 +229,24 @@ def unsubscribe(request, thread_id):
     thread = get_object_or_404(ForumThread, pk=thread_id)
     
     if request.method == "POST":
-        thread.unsubscribe(user)
+        thread.unsubscribe(user, "email")
         return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
     else:
         ctx = RequestContext(request, {"thread": thread})
         return render_to_response("agora/unsubscribe.html", ctx)
+
+
+@login_required
+def thread_updates(request):
+    subscriptions = ThreadSubscription.objects.filter(user=request.user, kind="onsite")
+    subscriptions = subscriptions.select_related("thread", "user")
+    subscriptions = subscriptions.order_by("-thread__last_modified")
+    
+    if request.method == "POST":
+        subscriptions.filter(pk=request.POST["thread_id"]).delete()
+    
+    ctx = {
+        "subscriptions": subscriptions,
+    }
+    ctx = RequestContext(request, ctx)
+    return render_to_response("agora/thread_updates.html", ctx)

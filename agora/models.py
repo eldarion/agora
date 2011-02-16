@@ -140,6 +140,7 @@ class Forum(models.Model):
                             "id": s.id,
                             "thread": s.thread_id,
                             "user": s.user_id,
+                            "kind": s.kind,
                         }
                         for s in t.subscriptions.all()
                     ]
@@ -194,6 +195,7 @@ class Forum(models.Model):
                     id = subscriber_data["id"],
                     user_id = subscriber_data["user"],
                     thread_id = subscriber_data["thread"],
+                    kind = subscriber_data["kind"],
                 )).save()
             thread.last_reply_id = thread_data["last_reply"]
             thread.save()
@@ -253,7 +255,7 @@ class ForumThread(ForumPost):
         self.save()
     
     def update_subscriber_count(self):
-        self.subscriber_count = self.subscriptions.count()
+        self.subscriber_count = self.subscriptions.filter(kind="email").count()
         self.save()
     
     def new_reply(self, reply):
@@ -263,25 +265,25 @@ class ForumThread(ForumPost):
         self.save()
         self.forum.new_reply(reply)
     
-    def subscribe(self, user):
+    def subscribe(self, user, kind):
         """
         Subscribes the given user to this thread (handling duplicates)
         """
-        ThreadSubscription.objects.get_or_create(thread=self, user=user)
+        ThreadSubscription.objects.get_or_create(thread=self, user=user, kind=kind)
     
-    def unsubscribe(self, user):
+    def unsubscribe(self, user, kind):
         try:
-            subscription = ThreadSubscription.objects.get(thread=self, user=user)
+            subscription = ThreadSubscription.objects.get(thread=self, user=user, kind=kind)
         except ThreadSubscription.DoesNotExist:
             return
         else:
             subscription.delete()
     
-    def subscribed(self, user):
+    def subscribed(self, user, kind):
         if user.is_anonymous():
             return False
         try:
-            ThreadSubscription.objects.get(thread=self, user=user)
+            ThreadSubscription.objects.get(thread=self, user=user, kind=kind)
         except ThreadSubscription.DoesNotExist:
             return False
         else:
@@ -327,9 +329,18 @@ class ThreadSubscription(models.Model):
     
     thread = models.ForeignKey(ForumThread, related_name="subscriptions")
     user = models.ForeignKey(User, related_name="forum_subscriptions")
+    kind = models.CharField(max_length=15)
     
     class Meta:
-        unique_together = [("thread", "user")]
+        unique_together = [("thread", "user", "kind")]
+    
+    @classmethod
+    def setup_onsite(cls):
+        for user in User.objects.all():
+            threads = ForumThread.objects.filter(author=user).values_list("pk", flat=True)
+            threads_by_replies = ForumReply.objects.filter(author=user).distinct().values_list("thread", flat=True)
+            for thread in set().union(threads, threads_by_replies):
+                ForumThread.objects.get(pk=thread).subscribe(user, "onsite")
 
 
 def signal(signals, sender=None):
