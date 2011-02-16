@@ -32,6 +32,10 @@ class ForumCategory(models.Model):
     
     def get_absolute_url(self):
         return reverse("agora_category", args=(self.pk,))
+    
+    @property
+    def forums(self):
+        return self.forum_set.order_by("title")
 
 
 class Forum(models.Model):
@@ -48,7 +52,6 @@ class Forum(models.Model):
     category = models.ForeignKey(ForumCategory,
         null = True,
         blank = True,
-        related_name = "forums"
     )
     
     # @@@ make group-aware
@@ -61,6 +64,10 @@ class Forum(models.Model):
     
     view_count = models.IntegerField(default=0, editable=False)
     reply_count = models.IntegerField(default=0, editable=False)
+    
+    @property
+    def thread_count(self):
+        return self.threads.count()
     
     # this is what gets run normally
     def inc_views(self):
