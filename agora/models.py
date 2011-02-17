@@ -346,7 +346,7 @@ class ThreadSubscription(models.Model):
         for user in User.objects.all():
             threads = ForumThread.objects.filter(author=user).values_list("pk", flat=True)
             threads_by_replies = ForumReply.objects.filter(author=user).distinct().values_list("thread", flat=True)
-            for thread in threads.union(threads_by_replies):
+            for thread in set(threads).union(threads_by_replies):
                 ForumThread.objects.get(pk=thread).subscribe(user, "onsite")
 
 
