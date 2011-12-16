@@ -63,9 +63,9 @@ class Forum(models.Model):
     )
     last_reply = models.ForeignKey(
         "ForumReply",
-        null=True,
-        editable=False,
-        on_delete=models.SET_NULL
+        null = True,
+        editable = False,
+        on_delete = models.SET_NULL
     )
     
     view_count = models.IntegerField(default=0, editable=False)
@@ -249,9 +249,9 @@ class ForumThread(ForumPost):
     )
     last_reply = models.ForeignKey(
         "ForumReply",
-        null=True,
-        editable=False,
-        on_delete=models.SET_NULL
+        null = True,
+        editable = False,
+        on_delete = models.SET_NULL
     )
     
     # @@@ sticky threads
