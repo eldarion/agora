@@ -170,7 +170,7 @@ def reply(request, thread_id):
     
     return render_to_response("agora/reply.html", {
         "member": member,
-        "thread_id": thread_id,
+        "thread": thread,
         "quote_content": quote_content,
         "subscribed": thread.subscribed(request.user, "email"),
         "first_reply": first_reply,
