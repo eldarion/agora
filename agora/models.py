@@ -52,6 +52,7 @@ class Forum(models.Model):
     category = models.ForeignKey(ForumCategory,
         null = True,
         blank = True,
+        on_delete = models.SET_NULL
     )
     
     # @@@ make group-aware
@@ -60,7 +61,12 @@ class Forum(models.Model):
         default = datetime.datetime.now,
         editable = False
     )
-    last_reply = models.ForeignKey("ForumReply", null=True, editable=False)
+    last_reply = models.ForeignKey(
+        "ForumReply",
+        null=True,
+        editable=False,
+        on_delete=models.SET_NULL
+    )
     
     view_count = models.IntegerField(default=0, editable=False)
     reply_count = models.IntegerField(default=0, editable=False)
@@ -241,7 +247,12 @@ class ForumThread(ForumPost):
         default = datetime.datetime.now,
         editable = False
     )
-    last_reply = models.ForeignKey("ForumReply", null=True, editable=False) # only temporarily null
+    last_reply = models.ForeignKey(
+        "ForumReply",
+        null=True,
+        editable=False,
+        on_delete=models.SET_NULL
+    )
     
     # @@@ sticky threads
     # @@@ closed threads
