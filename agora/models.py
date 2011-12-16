@@ -61,15 +61,16 @@ class Forum(models.Model):
         default = datetime.datetime.now,
         editable = False
     )
-    last_reply = models.ForeignKey(
-        "ForumReply",
+    last_thread = models.ForeignKey(
+        "ForumThread",
         null = True,
         editable = False,
-        on_delete = models.SET_NULL
+        on_delete = models.SET_NULL,
+        related_name = "+"
     )
     
     view_count = models.IntegerField(default=0, editable=False)
-    reply_count = models.IntegerField(default=0, editable=False)
+    post_count = models.IntegerField(default=0, editable=False)
     
     @property
     def thread_count(self):
@@ -88,27 +89,34 @@ class Forum(models.Model):
         self.view_count = view_count
         self.save()
     
-    def update_reply_count(self):
-        reply_count = 0
+    def update_post_count(self):
+        post_count = 0
         for forum in self.subforums.all():
-            forum.update_reply_count()
-            reply_count += forum.reply_count
+            forum.update_post_count()
+            post_count += forum.post_count
         for thread in self.threads.all():
             thread.update_reply_count()
-            reply_count += thread.reply_count
-        self.reply_count = reply_count
+            post_count += thread.reply_count + 1 # add one for the thread itself
+        self.post_count = post_count
         self.save()
     
-    def new_reply(self, reply):
-        self.reply_count += 1 # if this gets out of sync run update_reply_count
-        self.last_modified = reply.created
-        self.last_reply = reply
+    def new_post(self, post):
+        self.post_count += 1 # if this gets out of sync run update_post_count
+        self.last_modified = post.created
+        self.last_thread = post.thread
         self.save()
         if self.parent:
-            self.parent.new_reply(reply)
+            self.parent.new_post(post)
     
     def __unicode__(self):
         return self.title
+    
+    @property
+    def last_post(self):
+        if self.last_thread_id is None:
+            return None
+        else:
+            return self.last_thread.last_post
     
     def export(self, out=None):
         if out is None:
@@ -121,9 +129,9 @@ class Forum(models.Model):
                 "parent": self.parent_id,
                 "category": self.category_id,
                 "last_modified": self.last_modified.strftime("%Y-%m-%d %H:%M:%S"),
-                "last_reply": self.last_reply_id,
+                "last_thread": self.last_thread_id,
                 "view_count": self.view_count,
-                "reply_count": self.reply_count
+                "post_count": self.post_count
             },
             "threads": [
                 {
@@ -174,7 +182,7 @@ class Forum(models.Model):
             category_id = data["self"]["category"],
             last_modified = data["self"]["last_modified"],
             view_count = data["self"]["view_count"],
-            reply_count = data["self"]["reply_count"]
+            post_count = data["self"]["post_count"]
         ))
         forum._importing = True
         forum.save()
@@ -212,7 +220,7 @@ class Forum(models.Model):
                 )).save()
             thread.last_reply_id = thread_data["last_reply"]
             thread.save()
-        forum.last_reply_id = data["self"]["last_reply"]
+        forum.last_thread_id = data["self"]["last_thread"]
         forum.save()
 
 
@@ -281,7 +289,7 @@ class ForumThread(ForumPost):
         self.last_modified = reply.created
         self.last_reply = reply
         self.save()
-        self.forum.new_reply(reply)
+        self.forum.new_post(reply)
     
     def subscribe(self, user, kind):
         """
@@ -309,6 +317,17 @@ class ForumThread(ForumPost):
     
     def __unicode__(self):
         return self.title
+    
+    @property
+    def last_post(self):
+        if self.last_reply_id is None:
+            return self
+        else:
+            return self.last_reply
+    
+    @property
+    def thread(self):
+        return self
 
 
 class ForumReply(ForumPost):
@@ -331,7 +350,9 @@ class UserPostCount(models.Model):
     @classmethod
     def calculate(cls):
         for user in User.objects.all():
-            count = ForumReply.objects.filter(author=user).count()
+            thread_count = ForumThread.objects.filter(author=user).count()
+            reply_count = ForumReply.objects.filter(author=user).count()
+            count = thread_count + reply_count
             upc, created = cls._default_manager.get_or_create(
                 user = user,
                 defaults = dict(
@@ -371,6 +392,18 @@ def signal(signals, sender=None):
             s.connect(func, sender=sender)
         return func
     return _wrapped
+
+
+@signal(post_save, ForumThread)
+def forum_thread_save(sender, instance=None, created=False, **kwargs):
+    if instance and created:
+        forum = instance.forum
+        forum.new_post(instance)
+        
+        # @@@ this next part could be manager method
+        post_count, created = UserPostCount.objects.get_or_create(user=instance.author)
+        post_count.count += 1
+        post_count.save()
 
 
 @signal(post_save, ForumReply)

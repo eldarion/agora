@@ -25,7 +25,7 @@ def forums(request):
     categories = ForumCategory.objects.filter(parent__isnull=True)
     categories = categories.order_by("title")
     
-    most_active_forums = Forum.objects.order_by("-reply_count")[:5]
+    most_active_forums = Forum.objects.order_by("-post_count")[:5]
     most_viewed_forums = Forum.objects.order_by("-view_count")[:5]
     most_active_members = UserPostCount.objects.order_by("-count")[:5]
     

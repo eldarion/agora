@@ -37,7 +37,7 @@ admin.site.register(models.Forum,
         "parent",
         "category",
         "view_count",
-        "reply_count"
+        "post_count"
     ]
 )
 admin.site.register(models.ForumThread, ForumThreadAdmin)
