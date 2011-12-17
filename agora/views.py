@@ -106,7 +106,7 @@ def forum_thread(request, thread_id):
 
 @ajax
 @login_required
-def new_post(request, forum_id):
+def post_create(request, forum_id):
     
     member = request.user.get_profile()
     forum = get_object_or_404(Forum, id=forum_id)
@@ -129,7 +129,7 @@ def new_post(request, forum_id):
         
         return HttpResponseRedirect(reverse("agora_thread", args=[thread.id]))
     
-    return render_to_response("agora/new_post.html", {
+    return render_to_response("agora/post_create.html", {
         "member": member,
         "forum_id": forum_id,
     }, context_instance=RequestContext(request))
@@ -137,7 +137,7 @@ def new_post(request, forum_id):
 
 @ajax
 @login_required
-def reply(request, thread_id):
+def reply_create(request, thread_id):
     
     member = request.user.get_profile()
     thread = get_object_or_404(ForumThread, id=thread_id)
@@ -168,7 +168,7 @@ def reply(request, thread_id):
     
     first_reply = not ForumReply.objects.filter(thread=thread, author=request.user).exists()
     
-    return render_to_response("agora/reply.html", {
+    return render_to_response("agora/reply_create.html", {
         "member": member,
         "thread": thread,
         "quote_content": quote_content,
