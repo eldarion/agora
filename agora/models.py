@@ -10,7 +10,7 @@ from django.utils.html import conditional_escape
 from django.contrib.auth.models import User
 
 from agora.managers import ForumThreadManager
-from agora.settings import PARSER
+from agora.settings import PARSER, EDIT_TIMEOUT
 from agora.utils import load_path_attr
 
 
@@ -253,7 +253,7 @@ class ForumPost(models.Model):
     # allow editing for short period after posting
     def editable(self, user):
         if user == self.author:
-            if datetime.datetime.now() < self.created + datetime.timedelta(minutes=30): # @@@ factor out time interval
+            if datetime.datetime.now() < self.created + datetime.timedelta(**EDIT_TIMEOUT):
                 return True
         return False
 
