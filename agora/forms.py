@@ -5,8 +5,6 @@ from agora.models import ForumThread, ForumReply
 
 class PostForm(object):
     
-    subscribe = forms.BooleanField(required=False)
-    
     def __init__(self, *args, **kwargs):
         no_subscribe = kwargs.pop("no_subscribe", False)
         super(PostForm, self).__init__(*args, **kwargs)

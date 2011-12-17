@@ -74,22 +74,28 @@ def forum(request, forum_id):
 def forum_thread(request, thread_id):
     thread = get_object_or_404(ForumThread, id=thread_id)
     
-    if request.method == "POST" and request.user.is_authenticated:
-        
-        content = request.POST.get("content")
-        subscribe = {"true": True, "false": False, False: False}.get(request.POST.get("subscribe", False), True)
-        
-        reply = ForumReply(thread=thread, author=request.user, content=content)
-        reply.save()
-        
-        # subscribe the poster to the thread if requested (default value is True)
-        if subscribe:
-            thread.subscribe(reply.author, "email")
-        
-        # all users are automatically subscribed to onsite
-        thread.subscribe(reply.author, "onsite")
-        
-        return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
+    if request.user.is_authenticated():
+        if request.method == "POST":
+            reply_form = ReplyForm(request.POST)
+            
+            if form.is_valid():
+                reply = reply_form.save(commit=False)
+                reply.thread = thread
+                reply.author = request.user
+                reply.save()
+                
+                # subscribe the poster to the thread if requested (default value is True)
+                if form.cleaned_data["subscribe"]:
+                    thread.subscribe(reply.author, "email")
+                
+                # all users are automatically subscribed to onsite
+                thread.subscribe(reply.author, "onsite")
+                
+                return HttpResponseRedirect(reverse("agora_thread", args=[thread.id]))
+        else:
+            reply_form = ReplyForm(request.POST)
+    else:
+        reply_form = None
     
     order_type = request.GET.get("order_type", "asc")
     
@@ -102,6 +108,7 @@ def forum_thread(request, thread_id):
         "posts": posts,
         "order_type": order_type,
         "subscribed": thread.subscribed(request.user, "email"),
+        "reply_form": reply_form,
     }, context_instance=RequestContext(request))
 
 
