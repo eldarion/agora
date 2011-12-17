@@ -279,7 +279,7 @@ class ForumThread(ForumPost):
     )
     
     sticky = models.IntegerField(default=0)
-    closed = models.DateTimeField(null=True)
+    closed = models.DateTimeField(null=True, blank=True)
     
     view_count = models.IntegerField(default=0, editable=False)
     reply_count = models.IntegerField(default=0, editable=False)
