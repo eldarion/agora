@@ -2,7 +2,7 @@ import datetime
 
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, pre_delete
 from django.utils import simplejson as json
 
 from django.contrib.auth.models import User
@@ -110,6 +110,13 @@ class Forum(models.Model):
     
     def __unicode__(self):
         return self.title
+    
+    def update_last_thread(self):
+        try:
+            self.last_thread = self.threads.order_by("-created")[0]
+        except IndexError:
+            self.last_thread = None
+        self.save()
     
     @property
     def last_post(self):
@@ -318,6 +325,13 @@ class ForumThread(ForumPost):
     def __unicode__(self):
         return self.title
     
+    def update_last_reply(self):
+        try:
+            self.last_reply = self.replies.order_by("-created")[0]
+        except IndexError:
+            self.last_reply = None
+        self.save()
+    
     @property
     def last_post(self):
         if self.last_reply_id is None:
@@ -418,11 +432,25 @@ def forum_reply_save(sender, instance=None, created=False, **kwargs):
         post_count.save()
 
 
+@signal(pre_delete, ForumThread)
+def forum_thread_delete(sender, **kwargs):
+    thread = kwargs["instance"]
+    if thread.id == thread.forum.last_thread_id:
+        thread.forum.update_last_thread()
+    thread.forum.update_view_count()
+    thread.forum.update_post_count()
+
+
+@signal(pre_delete, ForumReply)
+def forum_reply_delete(sender, **kwargs):
+    reply = kwargs["instance"]
+    if reply.id == reply.thread.last_reply_id:
+        reply.thread.update_last_reply()
+    reply.thread.forum.update_post_count()
+
+
 @signal([post_save, post_delete], ThreadSubscription)
 def forum_subscription_update(sender, instance=None, created=False, **kwargs):
     if instance and created:
         thread = instance.thread
         thread.update_subscriber_count()
-
-
-# @@@ handling deletion? (e.g. counts, last_modified, last_reply)
