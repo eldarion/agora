@@ -3,6 +3,7 @@ from django.http import HttpResponseRedirect, Http404
 from django.template import RequestContext
 from django.shortcuts import get_object_or_404, render_to_response
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
 from agora.forms import ThreadForm, ReplyForm
@@ -74,7 +75,7 @@ def forum(request, forum_id):
 def forum_thread(request, thread_id):
     thread = get_object_or_404(ForumThread, id=thread_id)
     
-    if request.user.is_authenticated():
+    if request.user.is_authenticated() and not thread.closed:
         if request.method == "POST":
             reply_form = ReplyForm(request.POST)
             
@@ -93,7 +94,7 @@ def forum_thread(request, thread_id):
                 
                 return HttpResponseRedirect(reverse("agora_thread", args=[thread.id]))
         else:
-            reply_form = ReplyForm(request.POST)
+            reply_form = ReplyForm()
     else:
         reply_form = None
     
@@ -152,6 +153,9 @@ def reply_create(request, thread_id):
     
     member = request.user.get_profile()
     thread = get_object_or_404(ForumThread, id=thread_id)
+    
+    if thread.closed:
+        messages.error(request, "This thread is closed.")
     
     if request.method == "POST":
         form = ReplyForm(request.POST)
