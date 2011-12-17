@@ -63,17 +63,21 @@ def forum_category(request, category_id):
 def forum(request, forum_id):
     
     forum = get_object_or_404(Forum, id=forum_id)
-    
     threads = forum.threads.order_by("-sticky", "-last_modified")
+    
+    can_create_thread = request.user.has_perms("agora.add_forumthread", obj=forum)
     
     return render_to_response("agora/forum.html", {
         "forum": forum,
         "threads": threads,
+        "can_create_thread": can_create_thread,
     }, context_instance=RequestContext(request))
 
 
 def forum_thread(request, thread_id):
     thread = get_object_or_404(ForumThread, id=thread_id)
+    
+    can_create_reply = request.user.has_perms("agora.add_forumreply", obj=thread)
     
     if request.user.is_authenticated() and not thread.closed:
         if request.method == "POST":
@@ -110,6 +114,7 @@ def forum_thread(request, thread_id):
         "order_type": order_type,
         "subscribed": thread.subscribed(request.user, "email"),
         "reply_form": reply_form,
+        "can_create_reply": can_create_reply,
     }, context_instance=RequestContext(request))
 
 
@@ -119,6 +124,12 @@ def post_create(request, forum_id):
     
     member = request.user.get_profile()
     forum = get_object_or_404(Forum, id=forum_id)
+    
+    can_create_thread = request.user.has_perms("agora.add_forumthread", obj=forum)
+    
+    if not can_create_thread:
+        messages.error(request, "You do not have permission to create a thread.")
+        return HttpResponseRedirect(reverse("agora_forum", args=[forum.id]))
     
     if request.method == "POST":
         form = ThreadForm(request.POST)
@@ -156,6 +167,12 @@ def reply_create(request, thread_id):
     
     if thread.closed:
         messages.error(request, "This thread is closed.")
+    
+    can_create_reply = request.user.has_perms("agora.add_forumreply", obj=thread)
+    
+    if not can_create_reply:
+        messages.error(request, "You do not have permission to create a reply.")
+        return HttpResponseRedirect(reverse("agora_thread", args=[thread.id]))
     
     if request.method == "POST":
         form = ReplyForm(request.POST)
