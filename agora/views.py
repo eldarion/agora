@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, render_to_response
 
 from django.contrib.auth.decorators import login_required
 
+from agora.forms import ThreadForm, ReplyForm
 from agora.models import ForumCategory, Forum, UserPostCount
 from agora.models import ForumThread, ForumReply, ThreadSubscription
 
@@ -112,24 +113,27 @@ def post_create(request, forum_id):
     forum = get_object_or_404(Forum, id=forum_id)
     
     if request.method == "POST":
+        form = ThreadForm(request.POST)
         
-        title = request.POST.get("title")
-        content = request.POST.get("content")
-        subscribe = {"true": True, "false": False, False: False}.get(request.POST.get("subscribe", False), True)
-        
-        thread = ForumThread(forum=forum, title=title, content=content, author=request.user)
-        thread.save()
-        
-        # subscribe the poster to the thread if requested (default value is True)
-        if subscribe:
-            thread.subscribe(thread.author, "email")
-        
-        # all users are automatically subscribed to onsite
-        thread.subscribe(thread.author, "onsite")
-        
-        return HttpResponseRedirect(reverse("agora_thread", args=[thread.id]))
+        if form.is_valid():
+            thread = form.save(commit=False)
+            thread.forum = forum
+            thread.author = request.user
+            thread.save()
+            
+            # subscribe the poster to the thread if requested (default value is True)
+            if form.cleaned_data["subscribe"]:
+                thread.subscribe(thread.author, "email")
+            
+            # all users are automatically subscribed to onsite
+            thread.subscribe(thread.author, "onsite")
+            
+            return HttpResponseRedirect(reverse("agora_thread", args=[thread.id]))
+    else:
+        form = ThreadForm()
     
     return render_to_response("agora/post_create.html", {
+        "form": form,
         "member": member,
         "forum_id": forum_id,
     }, context_instance=RequestContext(request))
@@ -142,36 +146,40 @@ def reply_create(request, thread_id):
     member = request.user.get_profile()
     thread = get_object_or_404(ForumThread, id=thread_id)
     
-    quote = request.GET.get("quote") # thread id to quote
-    
-    if quote:
-        quote_reply = ForumReply.objects.get(id=int(quote))
-        quote_content = "\"%s\"" % quote_reply.content
-    else:
-        quote_content = ""
-    
     if request.method == "POST":
-        content = request.POST.get("content")
-        subscribe = {"true": True, "false": False, False: False}.get(request.POST.get("subscribe", False), True)
+        form = ReplyForm(request.POST)
         
-        reply = ForumReply(thread=thread, author=request.user, content=content)
-        reply.save()
+        if form.is_valid():
+            reply = form.save(commit=False)
+            reply.thread = thread
+            reply.author = request.user
+            reply.save()
+            
+            # subscribe the poster to the thread if requested (default value is True)
+            if form.cleaned_data["subscribe"]:
+                thread.subscribe(reply.author, "email")
+            
+            # all users are automatically subscribed to onsite
+            thread.subscribe(reply.author, "onsite")
+            
+            return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
+    else:
         
-        # subscribe the poster to the thread if requested (default value is True)
-        if subscribe:
-            thread.subscribe(reply.author, "email")
+        quote = request.GET.get("quote") # thread id to quote
+        initial = {}
         
-        # all users are automatically subscribed to onsite
-        thread.subscribe(reply.author, "onsite")
+        if quote:
+            quote_reply = ForumReply.objects.get(id=int(quote))
+            initial["content"] = "\"%s\"" % quote_reply.content
         
-        return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
+        form = ReplyForm(initial=initial)
     
     first_reply = not ForumReply.objects.filter(thread=thread, author=request.user).exists()
     
     return render_to_response("agora/reply_create.html", {
+        "form": form,
         "member": member,
         "thread": thread,
-        "quote_content": quote_content,
         "subscribed": thread.subscribed(request.user, "email"),
         "first_reply": first_reply,
     }, context_instance=RequestContext(request))
@@ -180,32 +188,32 @@ def reply_create(request, thread_id):
 @ajax
 @login_required
 def post_edit(request, post_kind, post_id):
-    member = request.user.get_profile()
     
     if post_kind == "thread":
         post = get_object_or_404(ForumThread, id=post_id)
         thread_id = post.id
+        form_class = ThreadForm
     elif post_kind == "reply":
         post = get_object_or_404(ForumReply, id=post_id)
         thread_id = post.thread.id
+        form_class = ReplyForm
     else:
-        raise Http404
+        raise Http404()
     
     if not post.editable(request.user):
         raise Http404()
     
     if request.method == "POST":
-        content = request.POST.get("content")
-        
-        post.content = content
-        post.save()
-        
-        return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
+        form = form_class(request.POST, instance=post, no_subscribe=True)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
+    else:
+        form = form_class(instance=post, no_subscribe=True)
     
     return render_to_response("agora/post_edit.html", {
-        "member": member,
-        "post_kind": post_kind,
         "post": post,
+        "form": form,
     }, context_instance=RequestContext(request))
 
 

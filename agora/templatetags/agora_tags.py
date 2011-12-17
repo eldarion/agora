@@ -79,3 +79,8 @@ def unsubscribe_url(parser, token):
     """
     tag, user, _, thread, _, varname = token.split_contents()
     return SubscribeUrlNode(user, thread, varname, subscribe=False)
+
+
+@register.filter
+def post_editable(post, user):
+    return post.editable(user)
