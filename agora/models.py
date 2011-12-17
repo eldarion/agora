@@ -278,7 +278,7 @@ class ForumThread(ForumPost):
         on_delete = models.SET_NULL
     )
     
-    # @@@ sticky threads
+    sticky = models.IntegerField(default=0)
     # @@@ closed threads
     
     view_count = models.IntegerField(default=0, editable=False)

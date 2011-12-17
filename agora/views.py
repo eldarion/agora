@@ -63,7 +63,7 @@ def forum(request, forum_id):
     
     forum = get_object_or_404(Forum, id=forum_id)
     
-    threads = forum.threads.order_by("-last_modified")
+    threads = forum.threads.order_by("-sticky", "-last_modified")
     
     return render_to_response("agora/forum.html", {
         "forum": forum,
