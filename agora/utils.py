@@ -1,5 +1,6 @@
 from django.core.exceptions import ImproperlyConfigured
-from django.utils.html import urlize, linebreaks
+from django.utils.html import urlize, linebreaks, escape
+from django.utils.safestring import mark_safe
 try:
     from django.utils.importlib import import_module
 except ImportError:
@@ -21,4 +22,4 @@ def load_path_attr(path):
 
 
 def default_text(text):
-    return linebreaks(urlize(text))
+    return mark_safe(linebreaks(urlize(escape(text))))
