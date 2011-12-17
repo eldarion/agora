@@ -1,13 +1,17 @@
 import datetime
+import functools
 
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save, post_delete, pre_delete
 from django.utils import simplejson as json
+from django.utils.html import conditional_escape
 
 from django.contrib.auth.models import User
 
 from agora.managers import ForumThreadManager
+from agora.settings import PARSER
+from agora.utils import load_path_attr
 
 
 # this is the glue to the activity events framework, provided as a no-op here
@@ -234,12 +238,17 @@ class Forum(models.Model):
 class ForumPost(models.Model):
     
     author = models.ForeignKey(User, related_name="%(app_label)s_%(class)s_related")
-    # @@@ support markup
     content = models.TextField()
+    content_html = models.TextField()
     created = models.DateTimeField(default=datetime.datetime.now, editable=False)
     
     class Meta:
         abstract = True
+    
+    def save(self, **kwargs):
+        render_func = functools.partial(load_path_attr(PARSER[0], **PARSER[1]))
+        self.content_html = conditional_escape(render_func(self.content))
+        super(ForumPost, self).save(**kwargs)
     
     # allow editing for short period after posting
     def editable(self, user):
