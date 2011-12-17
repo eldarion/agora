@@ -65,7 +65,10 @@ def forum(request, forum_id):
     forum = get_object_or_404(Forum, id=forum_id)
     threads = forum.threads.order_by("-sticky", "-last_modified")
     
-    can_create_thread = request.user.has_perm("agora.add_forumthread", obj=forum)
+    can_create_thread = all([
+        request.user.has_perm("agora.add_forumthread", obj=forum),
+        not forum.closed,
+    ])
     
     return render_to_response("agora/forum.html", {
         "forum": forum,
@@ -75,11 +78,16 @@ def forum(request, forum_id):
 
 
 def forum_thread(request, thread_id):
-    thread = get_object_or_404(ForumThread, id=thread_id)
+    qs = ForumThread.objects.select_related("forum")
+    thread = get_object_or_404(qs, id=thread_id)
     
-    can_create_reply = request.user.has_perm("agora.add_forumreply", obj=thread)
+    can_create_reply = all([
+        request.user.has_perm("agora.add_forumreply", obj=thread),
+        not thread.closed,
+        not thread.forum.closed,
+    ])
     
-    if request.user.is_authenticated() and not thread.closed and can_create_reply:
+    if can_create_reply:
         if request.method == "POST":
             reply_form = ReplyForm(request.POST)
             
@@ -125,6 +133,10 @@ def post_create(request, forum_id):
     member = request.user.get_profile()
     forum = get_object_or_404(Forum, id=forum_id)
     
+    if forum.closed:
+        messages.error(request, "This forum is closed.")
+        return HttpResponseRedirect(reverse("agora_forum", args=[forum.id]))
+    
     can_create_thread = request.user.has_perm("agora.add_forumthread", obj=forum)
     
     if not can_create_thread:
@@ -167,6 +179,7 @@ def reply_create(request, thread_id):
     
     if thread.closed:
         messages.error(request, "This thread is closed.")
+        return HttpResponseRedirect(reverse("agora_thread", args=[thread.id]))
     
     can_create_reply = request.user.has_perm("agora.add_forumreply", obj=thread)
     
