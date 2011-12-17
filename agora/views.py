@@ -79,7 +79,7 @@ def forum_thread(request, thread_id):
     
     can_create_reply = request.user.has_perms("agora.add_forumreply", obj=thread)
     
-    if request.user.is_authenticated() and not thread.closed:
+    if request.user.is_authenticated() and not thread.closed and can_create_reply:
         if request.method == "POST":
             reply_form = ReplyForm(request.POST)
             
