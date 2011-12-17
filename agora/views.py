@@ -171,7 +171,7 @@ def reply_create(request, thread_id):
     can_create_reply = request.user.has_perms("agora.add_forumreply", obj=thread)
     
     if not can_create_reply:
-        messages.error(request, "You do not have permission to create a reply.")
+        messages.error(request, "You do not have permission to reply to this thread.")
         return HttpResponseRedirect(reverse("agora_thread", args=[thread.id]))
     
     if request.method == "POST":
