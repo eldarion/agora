@@ -91,7 +91,7 @@ def forum_thread(request, thread_id):
         if request.method == "POST":
             reply_form = ReplyForm(request.POST)
             
-            if form.is_valid():
+            if reply_form.is_valid():
                 reply = reply_form.save(commit=False)
                 reply.thread = thread
                 reply.author = request.user
