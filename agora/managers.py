@@ -31,6 +31,5 @@ class ForumThreadManager(models.Manager):
         }
         queryset = queryset.filter(thread=thread)
         queryset = queryset.select_related("thread")
-        if reverse:
-            queryset = queryset.order_by("%screated" % (reverse and "-" or ""))
+        queryset = queryset.order_by("%screated" % (reverse and "-" or ""))
         return queryset
