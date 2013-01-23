@@ -12,6 +12,7 @@ setup(
     url = "http://github.com/eldarion/agora",
     packages = [
         "agora",
+        "agora.templatetags"
     ],
     classifiers = [
         "Development Status :: 3 - Alpha",
