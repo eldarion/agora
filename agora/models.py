@@ -5,6 +5,7 @@ import json
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save, post_delete, pre_delete
+from django.utils import timezone
 from django.utils.html import conditional_escape
 
 from django.contrib.auth.models import User
@@ -62,10 +63,7 @@ class Forum(models.Model):
     
     # @@@ make group-aware
     
-    last_modified = models.DateTimeField(
-        default = datetime.datetime.now,
-        editable = False
-    )
+    last_modified = models.DateTimeField(default=timezone.now, editable=False)
     last_thread = models.ForeignKey(
         "ForumThread",
         null = True,
@@ -241,7 +239,7 @@ class ForumPost(models.Model):
     author = models.ForeignKey(User, related_name="%(app_label)s_%(class)s_related")
     content = models.TextField()
     content_html = models.TextField()
-    created = models.DateTimeField(default=datetime.datetime.now, editable=False)
+    created = models.DateTimeField(default=timezone.now, editable=False)
     
     class Meta:
         abstract = True
@@ -254,7 +252,7 @@ class ForumPost(models.Model):
     # allow editing for short period after posting
     def editable(self, user):
         if user == self.author:
-            if datetime.datetime.now() < self.created + datetime.timedelta(**EDIT_TIMEOUT):
+            if timezone.now() < self.created + datetime.timedelta(**EDIT_TIMEOUT):
                 return True
         return False
 
@@ -269,8 +267,8 @@ class ForumThread(ForumPost):
     title = models.CharField(max_length=100)
     
     last_modified = models.DateTimeField(
-        default = datetime.datetime.now,
-        editable = False
+        default=timezone.now,
+        editable=False
     )
     last_reply = models.ForeignKey(
         "ForumReply",
