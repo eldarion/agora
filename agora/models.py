@@ -1,10 +1,10 @@
 import datetime
 import functools
+import json
 
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save, post_delete, pre_delete
-from django.utils import simplejson as json
 from django.utils.html import conditional_escape
 
 from django.contrib.auth.models import User
