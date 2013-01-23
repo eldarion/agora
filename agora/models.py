@@ -1,5 +1,4 @@
 import datetime
-import functools
 import json
 
 from django.core.urlresolvers import reverse
@@ -9,9 +8,8 @@ from django.utils.html import conditional_escape
 
 from django.contrib.auth.models import User
 
+from agora.conf import settings
 from agora.managers import ForumThreadManager
-from agora.settings import PARSER, EDIT_TIMEOUT
-from agora.utils import load_path_attr
 
 
 # this is the glue to the activity events framework, provided as a no-op here
@@ -244,14 +242,13 @@ class ForumPost(models.Model):
         abstract = True
     
     def save(self, **kwargs):
-        render_func = functools.partial(load_path_attr(PARSER[0], **PARSER[1]))
-        self.content_html = conditional_escape(render_func(self.content))
+        self.content_html = conditional_escape(settings.AGORA_PARSER(self.content))
         super(ForumPost, self).save(**kwargs)
     
     # allow editing for short period after posting
     def editable(self, user):
         if user == self.author:
-            if timezone.now() < self.created + datetime.timedelta(**EDIT_TIMEOUT):
+            if timezone.now() < self.created + datetime.timedelta(**settings.AGORA_EDIT_TIMEOUT):
                 return True
         return False
 

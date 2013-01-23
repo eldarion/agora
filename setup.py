@@ -14,6 +14,9 @@ setup(
         "agora",
         "agora.templatetags"
     ],
+    install_requires = [
+        "django-appconf==0.5"
+    ],
     classifiers = [
         "Development Status :: 3 - Alpha",
         "Environment :: Web Environment",
