@@ -50,14 +50,14 @@ class Forum(models.Model):
     
     # must only have one of these (or neither):
     parent = models.ForeignKey("self",
-        null = True,
-        blank = True,
-        related_name = "subforums"
+        null=True,
+        blank=True,
+        related_name="subforums"
     )
     category = models.ForeignKey(ForumCategory,
-        null = True,
-        blank = True,
-        on_delete = models.SET_NULL
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
     )
     
     # @@@ make group-aware
@@ -65,10 +65,10 @@ class Forum(models.Model):
     last_modified = models.DateTimeField(default=timezone.now, editable=False)
     last_thread = models.ForeignKey(
         "ForumThread",
-        null = True,
-        editable = False,
-        on_delete = models.SET_NULL,
-        related_name = "+"
+        null=True,
+        editable=False,
+        on_delete=models.SET_NULL,
+        related_name="+"
     )
     
     view_count = models.IntegerField(default=0, editable=False)
@@ -98,12 +98,12 @@ class Forum(models.Model):
             post_count += forum.post_count
         for thread in self.threads.all():
             thread.update_reply_count()
-            post_count += thread.reply_count + 1 # add one for the thread itself
+            post_count += thread.reply_count + 1  # add one for the thread itself
         self.post_count = post_count
         self.save()
     
     def new_post(self, post):
-        self.post_count += 1 # if this gets out of sync run update_post_count
+        self.post_count += 1  # if this gets out of sync run update_post_count
         self.last_modified = post.created
         self.last_thread = post.thread
         self.save()
@@ -184,48 +184,48 @@ class Forum(models.Model):
     def restore(cls, in_):
         data = json.load(open(in_))
         forum = Forum(**dict(
-            id = data["self"]["id"],
-            title = data["self"]["title"],
-            description = data["self"]["description"],
-            parent_id = data["self"]["parent"],
-            category_id = data["self"]["category"],
-            last_modified = data["self"]["last_modified"],
-            view_count = data["self"]["view_count"],
-            post_count = data["self"]["post_count"]
+            id=data["self"]["id"],
+            title=data["self"]["title"],
+            description=data["self"]["description"],
+            parent_id=data["self"]["parent"],
+            category_id=data["self"]["category"],
+            last_modified=data["self"]["last_modified"],
+            view_count=data["self"]["view_count"],
+            post_count=data["self"]["post_count"]
         ))
         forum._importing = True
         forum.save()
         for thread_data in data["threads"]:
             thread = ForumThread(**dict(
-                id = thread_data["id"],
-                author_id = thread_data["author"],
-                content = thread_data["content"],
-                created = thread_data["created"],
-                forum_id = thread_data["forum"],
-                title = thread_data["title"],
-                last_modified = thread_data["last_modified"],
-                view_count = thread_data["view_count"],
-                reply_count = thread_data["reply_count"],
-                subscriber_count = thread_data["subscriber_count"]
+                id=thread_data["id"],
+                author_id=thread_data["author"],
+                content=thread_data["content"],
+                created=thread_data["created"],
+                forum_id=thread_data["forum"],
+                title=thread_data["title"],
+                last_modified=thread_data["last_modified"],
+                view_count=thread_data["view_count"],
+                reply_count=thread_data["reply_count"],
+                subscriber_count=thread_data["subscriber_count"]
             ))
             thread._importing = True
             thread.save()
             for reply_data in thread_data["replies"]:
                 reply = ForumReply(**dict(
-                    id = reply_data["id"],
-                    author_id = reply_data["author"],
-                    content = reply_data["content"],
-                    created = reply_data["created"],
-                    thread_id = reply_data["thread"],
+                    id=reply_data["id"],
+                    author_id=reply_data["author"],
+                    content=reply_data["content"],
+                    created=reply_data["created"],
+                    thread_id=reply_data["thread"],
                 ))
                 reply._importing = True
                 reply.save()
             for subscriber_data in thread_data["subscriptions"]:
                 ThreadSubscription(**dict(
-                    id = subscriber_data["id"],
-                    user_id = subscriber_data["user"],
-                    thread_id = subscriber_data["thread"],
-                    kind = subscriber_data["kind"],
+                    id=subscriber_data["id"],
+                    user_id=subscriber_data["user"],
+                    thread_id=subscriber_data["thread"],
+                    kind=subscriber_data["kind"],
                 )).save()
             thread.last_reply_id = thread_data["last_reply"]
             thread.save()
@@ -271,9 +271,9 @@ class ForumThread(ForumPost):
     )
     last_reply = models.ForeignKey(
         "ForumReply",
-        null = True,
-        editable = False,
-        on_delete = models.SET_NULL
+        null=True,
+        editable=False,
+        on_delete=models.SET_NULL
     )
     
     sticky = models.IntegerField(default=0)
@@ -375,9 +375,9 @@ class UserPostCount(models.Model):
             reply_count = ForumReply.objects.filter(author=user).count()
             count = thread_count + reply_count
             upc, created = cls._default_manager.get_or_create(
-                user = user,
-                defaults = dict(
-                    count = count
+                user=user,
+                defaults=dict(
+                    count=count
                 )
             )
             if not created:
