@@ -98,7 +98,7 @@ def forum_thread(request, thread_id):
                 reply.save()
                 
                 # subscribe the poster to the thread if requested (default value is True)
-                if form.cleaned_data["subscribe"]:
+                if reply_form.cleaned_data["subscribe"]:
                     thread.subscribe(reply.author, "email")
                 
                 # all users are automatically subscribed to onsite
@@ -166,7 +166,7 @@ def post_create(request, forum_id):
     return render_to_response("agora/post_create.html", {
         "form": form,
         "member": member,
-        "forum_id": forum_id,
+        "forum": forum
     }, context_instance=RequestContext(request))
 
 
