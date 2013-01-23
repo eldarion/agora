@@ -4,7 +4,7 @@ from django.db.models.signals import post_save, post_delete, pre_delete
 from agora.models import ForumThread, ForumReply, ThreadSubscription, UserPostCount
 
 
-@receiver(post_save, ForumThread)
+@receiver(post_save, sender=ForumThread)
 def forum_thread_save(sender, instance=None, created=False, **kwargs):
     if instance and created:
         forum = instance.forum
@@ -16,7 +16,7 @@ def forum_thread_save(sender, instance=None, created=False, **kwargs):
         post_count.save()
 
 
-@receiver(post_save, ForumReply)
+@receiver(post_save, sender=ForumReply)
 def forum_reply_save(sender, instance=None, created=False, **kwargs):
     if instance and created:
         thread = instance.thread
@@ -28,7 +28,7 @@ def forum_reply_save(sender, instance=None, created=False, **kwargs):
         post_count.save()
 
 
-@receiver(pre_delete, ForumThread)
+@receiver(pre_delete, sender=ForumThread)
 def forum_thread_delete(sender, **kwargs):
     thread = kwargs["instance"]
     if thread.id == thread.forum.last_thread_id:
@@ -37,7 +37,7 @@ def forum_thread_delete(sender, **kwargs):
     thread.forum.update_post_count()
 
 
-@receiver(pre_delete, ForumReply)
+@receiver(pre_delete, sender=ForumReply)
 def forum_reply_delete(sender, **kwargs):
     reply = kwargs["instance"]
     if reply.id == reply.thread.last_reply_id:
@@ -45,7 +45,7 @@ def forum_reply_delete(sender, **kwargs):
     reply.thread.forum.update_post_count()
 
 
-@receiver([post_save, post_delete], ThreadSubscription)
+@receiver(post_save, sender=ThreadSubscription)
 def forum_subscription_update(sender, instance=None, created=False, **kwargs):
     if instance and created:
         thread = instance.thread
