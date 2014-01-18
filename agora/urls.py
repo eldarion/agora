@@ -1,6 +1,4 @@
-from django.conf.urls.defaults import *
-
-from agora import receivers
+from django.conf.urls import patterns, url
 
 
 urlpatterns = patterns("agora.views",
