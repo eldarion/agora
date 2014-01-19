@@ -1,5 +1,5 @@
-from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_delete
+from django.dispatch import receiver
 
 from agora.models import ForumThread, ForumReply, ThreadSubscription, UserPostCount
 
@@ -9,7 +9,7 @@ def forum_thread_save(sender, instance=None, created=False, **kwargs):
     if instance and created:
         forum = instance.forum
         forum.new_post(instance)
-        
+
         # @@@ this next part could be manager method
         post_count, created = UserPostCount.objects.get_or_create(user=instance.author)
         post_count.count += 1
@@ -21,7 +21,7 @@ def forum_reply_save(sender, instance=None, created=False, **kwargs):
     if instance and created:
         thread = instance.thread
         thread.new_reply(instance)
-        
+
         # @@@ this next part could be manager method
         post_count, created = UserPostCount.objects.get_or_create(user=instance.author)
         post_count.count += 1

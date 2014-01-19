@@ -4,11 +4,11 @@ from agora import models
 
 
 class ForumThreadAdmin(admin.ModelAdmin):
-    
+
     class ForumThreadReplyInline(admin.StackedInline):
         model = models.ForumReply
         extra = 1
-    
+
     list_display = [
         "id",
         "title",
@@ -24,13 +24,15 @@ class ForumThreadAdmin(admin.ModelAdmin):
 
 
 
-admin.site.register(models.ForumCategory,
+admin.site.register(
+    models.ForumCategory,
     list_display = [
         "title",
         "parent"
     ]
 )
-admin.site.register(models.Forum,
+admin.site.register(
+    models.Forum,
     list_display = [
         "id",
         "title",

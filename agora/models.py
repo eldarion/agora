@@ -18,34 +18,33 @@ def issue_update(kind, **kwargs):
 
 
 class ForumCategory(models.Model):
-    
+
     title = models.CharField(max_length=100)
-    
     parent = models.ForeignKey("self", null=True, blank=True, related_name="subcategories")
-    
+
     # @@@ total descendant forum count?
     # @@@ make group-aware
-    
+
     class Meta:
         verbose_name_plural = "forum categories"
-    
+
     def __unicode__(self):
         return self.title
-    
+
     def get_absolute_url(self):
-        return reverse("agora_category", args=(self.pk,))
-    
+        return reverse("agora_category", args=[self.pk])
+
     @property
     def forums(self):
         return self.forum_set.order_by("title")
 
 
 class Forum(models.Model):
-    
+
     title = models.CharField(max_length=100)
     description = models.TextField()
     closed = models.DateTimeField(null=True, blank=True)
-    
+
     # must only have one of these (or neither):
     parent = models.ForeignKey("self",
         null=True,
@@ -57,9 +56,9 @@ class Forum(models.Model):
         blank=True,
         on_delete=models.SET_NULL
     )
-    
+
     # @@@ make group-aware
-    
+
     last_modified = models.DateTimeField(default=timezone.now, editable=False)
     last_thread = models.ForeignKey(
         "ForumThread",
@@ -68,19 +67,19 @@ class Forum(models.Model):
         on_delete=models.SET_NULL,
         related_name="+"
     )
-    
+
     view_count = models.IntegerField(default=0, editable=False)
     post_count = models.IntegerField(default=0, editable=False)
-    
+
     @property
     def thread_count(self):
         return self.threads.count()
-    
+
     # this is what gets run normally
     def inc_views(self):
         self.view_count += 1
         self.save()
-    
+
     # this can be used occasionally to get things back in sync
     def update_view_count(self):
         view_count = 0
@@ -88,7 +87,7 @@ class Forum(models.Model):
             view_count += thread.view_count
         self.view_count = view_count
         self.save()
-    
+
     def update_post_count(self):
         post_count = 0
         for forum in self.subforums.all():
@@ -99,7 +98,7 @@ class Forum(models.Model):
             post_count += thread.reply_count + 1  # add one for the thread itself
         self.post_count = post_count
         self.save()
-    
+
     def new_post(self, post):
         self.post_count += 1  # if this gets out of sync run update_post_count
         self.last_modified = post.created
@@ -107,24 +106,24 @@ class Forum(models.Model):
         self.save()
         if self.parent:
             self.parent.new_post(post)
-    
+
     def __unicode__(self):
         return self.title
-    
+
     def update_last_thread(self):
         try:
             self.last_thread = self.threads.order_by("-created")[0]
         except IndexError:
             self.last_thread = None
         self.save()
-    
+
     @property
     def last_post(self):
         if self.last_thread_id is None:
             return None
         else:
             return self.last_thread.last_post
-    
+
     def export(self, out=None):
         if out is None:
             out = "forum-export-%d.json" % self.id
@@ -177,7 +176,7 @@ class Forum(models.Model):
             ]
         }
         json.dump(data, open(out, "wb"))
-    
+
     @classmethod
     def restore(cls, in_):
         data = json.load(open(in_))
@@ -232,19 +231,19 @@ class Forum(models.Model):
 
 
 class ForumPost(models.Model):
-    
+
     author = models.ForeignKey(User, related_name="%(app_label)s_%(class)s_related")
     content = models.TextField()
     content_html = models.TextField()
     created = models.DateTimeField(default=timezone.now, editable=False)
-    
+
     class Meta:
         abstract = True
-    
+
     def save(self, **kwargs):
         self.content_html = conditional_escape(settings.AGORA_PARSER(self.content))
         super(ForumPost, self).save(**kwargs)
-    
+
     # allow editing for short period after posting
     def editable(self, user):
         if user == self.author:
@@ -254,14 +253,12 @@ class ForumPost(models.Model):
 
 
 class ForumThread(ForumPost):
-    
+
     # used for code that needs to know the kind of post this object is.
     kind = "thread"
-    
+
     forum = models.ForeignKey(Forum, related_name="threads")
-    
     title = models.CharField(max_length=100)
-    
     last_modified = models.DateTimeField(
         default=timezone.now,
         editable=False
@@ -272,42 +269,40 @@ class ForumThread(ForumPost):
         editable=False,
         on_delete=models.SET_NULL
     )
-    
     sticky = models.IntegerField(default=0)
     closed = models.DateTimeField(null=True, blank=True)
-    
     view_count = models.IntegerField(default=0, editable=False)
     reply_count = models.IntegerField(default=0, editable=False)
     subscriber_count = models.IntegerField(default=0, editable=False)
-    
+
     objects = ForumThreadManager()
-    
+
     def inc_views(self):
         self.view_count += 1
         self.save()
         self.forum.inc_views()
-    
+
     def update_reply_count(self):
         self.reply_count = self.replies.all().count()
         self.save()
-    
+
     def update_subscriber_count(self):
         self.subscriber_count = self.subscriptions.filter(kind="email").count()
         self.save()
-    
+
     def new_reply(self, reply):
         self.reply_count += 1
         self.last_modified = reply.created
         self.last_reply = reply
         self.save()
         self.forum.new_post(reply)
-    
+
     def subscribe(self, user, kind):
         """
         Subscribes the given user to this thread (handling duplicates)
         """
         ThreadSubscription.objects.get_or_create(thread=self, user=user, kind=kind)
-    
+
     def unsubscribe(self, user, kind):
         try:
             subscription = ThreadSubscription.objects.get(thread=self, user=user, kind=kind)
@@ -315,7 +310,7 @@ class ForumThread(ForumPost):
             return
         else:
             subscription.delete()
-    
+
     def subscribed(self, user, kind):
         if user.is_anonymous():
             return False
@@ -325,46 +320,46 @@ class ForumThread(ForumPost):
             return False
         else:
             return True
-    
+
     def __unicode__(self):
         return self.title
-    
+
     def update_last_reply(self):
         try:
             self.last_reply = self.replies.order_by("-created")[0]
         except IndexError:
             self.last_reply = None
         self.save()
-    
+
     @property
     def last_post(self):
         if self.last_reply_id is None:
             return self
         else:
             return self.last_reply
-    
+
     @property
     def thread(self):
         return self
 
 
 class ForumReply(ForumPost):
-    
+
     # used for code that needs to know the kind of post this object is.
     kind = "reply"
-    
+
     thread = models.ForeignKey(ForumThread, related_name="replies")
-    
+
     class Meta:
         verbose_name = "forum reply"
         verbose_name_plural = "forum replies"
 
 
 class UserPostCount(models.Model):
-    
+
     user = models.ForeignKey(User, related_name="post_count")
     count = models.IntegerField(default=0)
-    
+
     @classmethod
     def calculate(cls):
         for user in User.objects.all():
@@ -383,14 +378,14 @@ class UserPostCount(models.Model):
 
 
 class ThreadSubscription(models.Model):
-    
+
     thread = models.ForeignKey(ForumThread, related_name="subscriptions")
     user = models.ForeignKey(User, related_name="forum_subscriptions")
     kind = models.CharField(max_length=15)
-    
+
     class Meta:
         unique_together = [("thread", "user", "kind")]
-    
+
     @classmethod
     def setup_onsite(cls):
         for user in User.objects.all():

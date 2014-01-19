@@ -3,24 +3,23 @@ from django.core.urlresolvers import reverse
 
 from agora.models import ThreadSubscription
 
+
 register = template.Library()
 
 
 class SubscriptionNode(template.Node):
-    
+
     def __init__(self, user, varname, thread_list=None):
         self.user = template.Variable(user)
         if thread_list:
             self.thread_list = [template.Variable(t) for t in thread_list]
         self.varname = varname
-    
+
     def render(self, context):
         user = self.user.resolve(context)
-        
         threads = ThreadSubscription.objects.filter(user=user)
         if self.thread_list:
             threads = threads.filter(thread__in=self.thread_list)
-        
         context[self.varname] = threads
         return ""
 
@@ -44,7 +43,7 @@ def filter_subscriptions(parser, token):
 
 
 class SubscribeUrlNode(template.Node):
-    
+
     def __init__(self, user, thread, varname, subscribe=True):
         self.user = template.Variable(user)
         self.thread = template.Variable(thread)
@@ -52,7 +51,7 @@ class SubscribeUrlNode(template.Node):
         self.viewname = "agora_unsubscribe"
         if subscribe:
             self.viewname = "agora_subscribe"
-    
+
     def render(self, context):
         user = self.user.resolve(context)
         thread = self.thread.resolve(context)
