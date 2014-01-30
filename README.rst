@@ -12,4 +12,4 @@ Agora was originally built by Eldarion, incorporating code and ideas
 from various client projects. The clients were kind enough to allow
 Eldarion to open source the app and contribute it to Pinax.
 
-.. _Pinax Forums: https://github.com/eldarion/forums-starter-project
+.. _Pinax Forums: https://github.com/pinax/pinax-project-forums
