@@ -1,10 +1,10 @@
 Agora
 =====
 
-.. image:: https://img.shields.io/travis/eldarion/agora.svg
+.. image:: http://img.shields.io/travis/eldarion/agora.svg
     :target: https://travis-ci.org/eldarion/agora
 
-.. image:: https://img.shields.io/coveralls/eldarion/agora.svg
+.. image:: http://img.shields.io/coveralls/eldarion/agora.svg
     :target: https://coveralls.io/r/eldarion/agora
 
 .. image:: https://img.shields.io/pypi/dm/agora.svg
