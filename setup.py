@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import find_packages, setup
 
 
 setup(
@@ -10,12 +10,16 @@ setup(
     long_description=open("README.rst").read(),
     license="BSD",
     url="http://github.com/eldarion/agora",
-    packages=[
-        "agora",
-        "agora.templatetags"
-    ],
+    packages=find_packages(),
     install_requires=[
-        "django-appconf==0.6"
+        "django-appconf>=0.6",
+        "django-user-accounts==1.0c9"
+    ],
+    test_suite="runtests.runtests",
+    tests_require=[
+        "django-appconf>=0.6",
+        "Django>=1.5",
+        "django-user-accounts==1.0c9"
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",
