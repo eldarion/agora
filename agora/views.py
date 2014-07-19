@@ -195,7 +195,7 @@ def reply_create(request, thread_id):
 
             return HttpResponseRedirect(reverse("agora_thread", args=[thread_id]))
     else:
-        quote = request.GET.get("quote") # thread id to quote
+        quote = request.GET.get("quote")  # thread id to quote
         initial = {}
 
         if quote:

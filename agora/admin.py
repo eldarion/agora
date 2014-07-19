@@ -23,17 +23,16 @@ class ForumThreadAdmin(admin.ModelAdmin):
     ]
 
 
-
 admin.site.register(
     models.ForumCategory,
-    list_display = [
+    list_display=[
         "title",
         "parent"
     ]
 )
 admin.site.register(
     models.Forum,
-    list_display = [
+    list_display=[
         "id",
         "title",
         "parent",

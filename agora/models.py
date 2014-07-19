@@ -46,12 +46,14 @@ class Forum(models.Model):
     closed = models.DateTimeField(null=True, blank=True)
 
     # must only have one of these (or neither):
-    parent = models.ForeignKey("self",
+    parent = models.ForeignKey(
+        "self",
         null=True,
         blank=True,
         related_name="subforums"
     )
-    category = models.ForeignKey(ForumCategory,
+    category = models.ForeignKey(
+        ForumCategory,
         null=True,
         blank=True,
         on_delete=models.SET_NULL
@@ -390,6 +392,8 @@ class ThreadSubscription(models.Model):
     def setup_onsite(cls):
         for user in User.objects.all():
             threads = ForumThread.objects.filter(author=user).values_list("pk", flat=True)
-            threads_by_replies = ForumReply.objects.filter(author=user).distinct().values_list("thread", flat=True)
+            threads_by_replies = ForumReply.objects.filter(
+                author=user
+            ).distinct().values_list("thread", flat=True)
             for thread in set(threads).union(threads_by_replies):
                 ForumThread.objects.get(pk=thread).subscribe(user, "onsite")
