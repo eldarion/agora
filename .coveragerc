@@ -1,4 +1,0 @@
-[run]
-source = agora
-omit = agora/tests/*
-branch = 1
